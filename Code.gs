@@ -179,8 +179,22 @@ function ssObj() { return SS_ || (SS_ = SpreadsheetApp.getActive()); }
 /** 要寫入的工作表一律用 sheet()；在 withLock 裡會記下來，結束時讓那張表的快取作廢 */
 function sheet(name) { if (IN_LOCK) DIRTY[name] = 1; return ssObj().getSheetByName(name); }
 function rawSheet(name) { return ssObj().getSheetByName(name); }
+function readVers() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('tableVers') || '{}'); } catch (e) { return {}; } }
 function vers() {
-  if (!VERS) { try { VERS = JSON.parse(PropertiesService.getScriptProperties().getProperty('tableVers') || '{}'); } catch (e) { VERS = {}; } }
+  if (VERS) return VERS;
+  VERS = readVers();
+  // 有表還沒有版本號（例如剛新增）：在鎖裡補上，之後就能快取
+  if (!IN_LOCK && CACHED_TABLES.some(t => !VERS[t])) {
+    const l = LockService.getScriptLock();
+    if (l.tryLock(3000)) {
+      try {
+        const v = readVers();
+        CACHED_TABLES.forEach(t => { if (!v[t]) v[t] = Utilities.getUuid().slice(0, 8); });
+        PropertiesService.getScriptProperties().setProperty('tableVers', JSON.stringify(v));
+        VERS = v;
+      } finally { l.releaseLock(); }
+    }
+  }
   return VERS;
 }
 function packCells(v) { return v.map(r => r.map(c => c instanceof Date ? { $d: c.getTime() } : c)); }
