@@ -144,13 +144,14 @@ document.addEventListener('focusin', e => { if (e.target.matches('[data-cnt]')) 
 /* ================= 使用教學（金框導覽） =================
    之後加功能時：新步驟標上 since: 新版本號，並把 TOUR_VERSION 加 1 */
 const TOUR_KEY = 'outreach.tour';
-const TOUR_VERSION = 5;
+const TOUR_VERSION = 6;
 const q1 = sel => document.querySelector(sel);
 const TOUR_STEPS = [
   { since: 1, where: 'home', target: () => q1('#new-team'), title: '建立開展隊', text: '任何人都能建立開展隊（例如一次福音開展活動），建立的人就是負責人，可以發邀請連結給大家加入。' },
   { since: 1, where: 'home', target: () => q1('.team-card'), title: '我的開展隊', text: '加入的開展隊都在這裡，點進去就能記錄和看彙整。' },
   { since: 2, where: 'home', target: () => q1('#to-admin'), title: '後台管理', text: '建立開展隊的人可以在後台一次管理自己建立的開展隊：選取、修改、開放或關閉加入、刪除。平台管理員看得到所有開展隊。' },
   { since: 5, where: 'team', tab: 'rec', target: () => q1('#gospel-card'), title: '人生的奧秘 傳講版', text: '出去開展時，打開「人生的奧秘」1 分鐘或 3 分鐘版，跟對方一起看，最後帶他禱告；也可以按「傳給對方」把連結傳給他。' },
+  { since: 6, where: 'team', tab: 'rec', target: () => q1('[data-act=myQr]'), title: '加 LINE 好友', text: '按「加 LINE 好友」顯示你的 LINE QR 碼給對方掃。第一次要貼上 LINE「我的 QR 碼」的連結，之後一按就出現。' },
   { since: 1, where: 'team', tab: 'rec', target: () => q1('#new-ses') || q1('.ses-card'), title: '開展時段', text: '每次出去開展，先建立一個時段（時間、地點、要計數的項目），其他人點進去就能加入一起記錄。' },
   { since: 3, where: 'team', tab: 'rec', target: () => q1('#new-ses'), title: '時段範本', text: '建立過的開展時段會自動變成範本。建立新時段時，點一下範本就帶入名稱、時間、地點和計數項目，只要確認日期。' },
   { since: 4, where: 'team', tab: 'rec', target: () => q1('#new-ses'), title: '一次建立多個時段', text: '像設定鬧鐘一樣：可以加好幾組時間（預設和第一組一樣），選「每天」「每週」或自訂星期（週一～主日），再選重複到哪一天，一次建好整段期間的時段。' },

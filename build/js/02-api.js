@@ -73,7 +73,7 @@ function demoTeam() {
   const nm = u => d.people[u] || '';
   return {
     team: { ...d.team },
-    me: { userId: me, name: nm(me), perms, member: !!myM, isAdmin: false },
+    me: { userId: me, name: nm(me), perms, member: !!myM, isAdmin: false, friendLink: d.friendLink || '' },
     members: d.members.map(m => ({ userId: m.userId, name: nm(m.userId), title: m.title, perms: DPERM(m.perms), joined: m.joined })),
     sessions: d.sessions.map(s => ({ ...s, creator: nm(s.creatorId), parts: d.counts.filter(c => c.sid === s.id).map(c => ({ userId: c.userId, name: nm(c.userId), counts: { ...c.counts }, updated: c.updated })) })),
     cards: d.cards.map(c => {
@@ -119,6 +119,7 @@ async function demoApi(action, p) {
     case 'adminUpdate': { const t = demoAdmin().teams.find(x => x.id === p.teamId); if (t.id === 'T1') Object.assign(d.team, p.team); else Object.assign(d.extra.find(x => x.id === t.id), p.team); return { ok: true, team: t }; }
     case 'adminSetOpen': p.teamIds.forEach(id => { if (id === 'T1') d.team.open = p.open; else d.extra.find(x => x.id === id).open = p.open; }); return { ok: true, ...demoAdmin() };
     case 'adminDelete': d.extra = d.extra.filter(x => !p.teamIds.includes(x.id)); if (p.teamIds.includes('T1')) d.team.deleted = true; return { ok: true, ...demoAdmin() };
+    case 'saveFriendLink': { const v = String(p.link || '').trim(); d.friendLink = !v ? '' : /^https:\/\/line\.me\//.test(v) ? v : 'https://line.me/ti/p/~' + v.replace(/^[~@]/, ''); return { ok: true, friendLink: d.friendLink }; }
     case 'uploadImage': return { ok: true, url: p.data };
     case 'myData': return { ok: true, found: !!d.people[me], name: d.people[me] || '', lineName: '簡晨光 Isaiah', teams: 2, cards: d.cards.filter(c => c.ownerId === me).length };
     case 'deleteMyData': return { ok: true, cards: 0 };

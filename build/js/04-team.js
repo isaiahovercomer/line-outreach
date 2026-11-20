@@ -86,11 +86,11 @@ function renderTeam(keepScroll) {
 /* ================= 傳講工具：人生的奧秘 =================
    連到韓國福音書房（KGBR）官方的「人生的奧秘」互動傳講頁；網站會依手機語言自動顯示繁體中文。
    官方網站不允許被嵌入其他網頁，所以在 LINE 裡用內建瀏覽器打開，關掉就回到平台 */
-const GOSPEL = { short: 'https://gospel.kgbr.co.kr/', long: 'https://gospel.kgbr.co.kr/long/', share: 'https://gospel.kgbr.co.kr/share/' };
+const GOSPEL = { short: 'https://gospel.kgbr.co.kr/', long: 'https://gospel.kgbr.co.kr/long/', share: 'https://gospel.kgbr.co.kr/share/', icon: 'https://gospel.kgbr.co.kr/app-icon-192.png' };
 const gospelCard = compact => `<section class="gospel-card ${compact ? 'compact' : ''} no-shot" id="gospel-card">
-    <div class="gc-head"><span class="gc-ic" aria-hidden="true">${ICON.book}</span><div><b>人生的奧秘</b><small>傳講版・跟對方一起看，最後帶他禱告</small></div></div>
-    <div class="gc-btns"><button type="button" class="btn send small" data-act="openUrl" data-url="${GOSPEL.short}">1 分鐘版</button><button type="button" class="btn plain small" data-act="openUrl" data-url="${GOSPEL.long}">3 分鐘版</button>
-      <button type="button" class="btn plain small" data-act="copyGospel">${ICON.copy} 傳給對方</button></div>
+    <div class="gc-head"><img class="gc-ic" src="${GOSPEL.icon}" alt="人生的奧秘" width="42" height="42" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'gc-ic fb',innerHTML:ICON.book}))"><div><b>人生的奧秘</b><small>傳講版・跟對方一起看，最後帶他禱告</small></div></div>
+    <div class="gc-btns"><button type="button" class="btn send small" data-act="openUrl" data-url="${GOSPEL.short}">1 分鐘版</button><button type="button" class="btn plain small" data-act="openUrl" data-url="${GOSPEL.long}">3 分鐘版</button></div>
+    <div class="gc-btns"><button type="button" class="btn plain small" data-act="copyGospel">${ICON.copy} 傳給對方</button><button type="button" class="btn line-green small" data-act="myQr">${ICON.qr} 加 LINE 好友</button></div>
   </section>`;
 async function openUrl(url) {
   if (inClient()) { try { await LIFF_READY; liff.openWindow({ url, external: false }); return; } catch (e) {} }

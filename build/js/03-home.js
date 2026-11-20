@@ -148,10 +148,12 @@ async function myDataFlow() {
   setNav(null);
   view(loading());
   const d = await api('myData');
+  if (ME) ME.friendLink = d.friendLink || '';
   view(`${subbar('返回', '我的資料')}
     <div class="panel">
       <label class="field"><span>姓名（顯示在開展隊、記名卡片上）</span><input id="md-name" value="${esc(d.name)}" maxlength="20"></label>
       <button class="btn send" type="button" id="md-save">儲存</button>
+      <p class="muted small" style="margin-top:14px">加 LINE 好友的 QR 碼：${d.friendLink ? '已設定' : '還沒設定'}　<a href="#" data-act="friendSetup">${d.friendLink ? '修改' : '設定'}</a></p>
       <p class="muted" style="margin-top:14px">LINE：${esc(d.lineName || '')}・加入 ${d.teams} 個開展隊・記了 ${d.cards} 張名單</p>
       <p class="muted" style="margin-top:14px">刪除後，你的姓名、計數、你記的名單都會移除，並退出所有開展隊。你建立的開展隊要先刪除。</p>
       <button class="btn cancel" type="button" id="md-del" style="margin-top:10px">刪除我的資料</button>

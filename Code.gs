@@ -11,7 +11,7 @@ const CONFIG = {
 
 const SH = { PEOPLE: '使用者', TEAMS: '開展隊', MEMBERS: '隊員', SESSIONS: '時段', COUNTS: '計數', CARDS: '名單卡', ADMINS: '管理員' };
 const HEADERS = {
-  '使用者': ['LINE userId', '姓名', 'LINE名稱', '更新時間'],
+  '使用者': ['LINE userId', '姓名', 'LINE名稱', '更新時間', '加好友連結'],
   '開展隊': ['隊代碼', '名稱', '說明', '開始日', '結束日', '色調', '邀請碼', '開放加入', '建立者', '建立時間', '圖片'],
   '隊員': ['隊代碼', 'LINE userId', '姓名', '職稱', '權限', '加入時間'],
   '時段': ['時段代碼', '隊代碼', '名稱', '日期', '開始', '結束', '地點', '計數項目', '建立者 userId', '建立者', '建立時間', '備註'],
@@ -68,6 +68,7 @@ function doPost(e) {
       case 'session':       out = { ok: true, ...createSession(user) }; break;
       case 'home':          out = { ok: true, me: meOf(user), teams: listTeams(user) }; break;
       case 'saveProfile':   out = { ok: true, profile: saveProfile(user, req.name) }; break;
+      case 'saveFriendLink': out = { ok: true, friendLink: saveFriendLink(user, req.link) }; break;
       case 'myData':        out = { ok: true, ...myData(user) }; break;
       case 'deleteMyData':  out = { ok: true, ...deleteMyData(user) }; break;
       case 'uploadImage':   out = { ok: true, url: uploadImage(user, req.data, req.mime) }; break;
@@ -187,7 +188,29 @@ function isAdmin(uid) { if (!ADMIN_IDS) ADMIN_IDS = rows(SH.ADMINS).map(r => Str
 /* ---------- 使用者 ---------- */
 function findPerson(uid) { return findRow(SH.PEOPLE, 0, uid); }
 function nameOf(uid) { const f = findPerson(uid); return f ? String(f.r[1]) : ''; }
-function meOf(user) { return { userId: user.userId, displayName: user.displayName, name: nameOf(user.userId), isAdmin: isAdmin(user.userId) }; }
+function meOf(user) { return { userId: user.userId, displayName: user.displayName, name: nameOf(user.userId), isAdmin: isAdmin(user.userId), friendLink: friendLinkOf(user.userId) }; }
+/** 加 LINE 好友連結：「我的 QR 碼」複製的連結（https://line.me/ti/p/…），或 LINE ID */
+function cleanFriendLink(v) {
+  const s = str(v, 300).replace(/\s+/g, '');
+  if (!s) return '';
+  let m = /^https?:\/\/line\.me\/(?:R\/)?ti\/p\/([\w~@%\-.]+)\/?(?:\?.*)?$/i.exec(s);
+  if (m) return 'https://line.me/ti/p/' + m[1];
+  m = /^@([\w.\-]{2,40})$/.exec(s);
+  if (m) return 'https://line.me/R/ti/p/@' + m[1];
+  m = /^~?([\w.\-]{3,30})$/.exec(s);
+  if (m) return 'https://line.me/ti/p/~' + m[1];
+  throw new Error('看不懂這個連結，請貼上 LINE「我的 QR 碼」複製的連結（https://line.me/ti/p/…）或你的 LINE ID');
+}
+function friendLinkOf(uid) { const f = findPerson(uid); return f ? str(f.r[4], 300) : ''; }
+function saveFriendLink(user, link) {
+  const v = cleanFriendLink(link);
+  return withLock(() => {
+    const f = findPerson(user.userId);
+    if (f) sheet(SH.PEOPLE).getRange(f.row, 5).setValue(v);
+    else sheet(SH.PEOPLE).appendRow([user.userId, user.displayName, user.displayName, new Date(), v]);
+    return v;
+  });
+}
 function saveProfile(user, name) {
   const nm = str(name, 20);
   if (!nm) throw new Error('請填寫姓名');
@@ -479,7 +502,7 @@ function teamPayload(user, ctx) {
   });
   const team = ctx.team;
   if (!ctx.perms.manage) team.code = ctx.team.open ? team.code : '';
-  return { team, me: { userId: ctx.uid, name: ctx.name, perms: ctx.perms, member: ctx.member, isAdmin: isAdmin(ctx.uid) }, members, sessions, cards };
+  return { team, me: { userId: ctx.uid, name: ctx.name, perms: ctx.perms, member: ctx.member, isAdmin: isAdmin(ctx.uid), friendLink: friendLinkOf(ctx.uid) }, members, sessions, cards };
 }
 
 /** 後台：建立者看自己建立的，平台管理員看全部 */
@@ -534,7 +557,7 @@ function myData(user) {
   const f = findPerson(user.userId);
   const teams = rows(SH.MEMBERS).filter(r => String(r[MB.UID]) === user.userId).length;
   const cards = rows(SH.CARDS).filter(r => String(r[CD.UID]) === user.userId).length;
-  return { found: !!f, name: f ? String(f.r[1]) : '', lineName: user.displayName, teams, cards };
+  return { found: !!f, name: f ? String(f.r[1]) : '', lineName: user.displayName, teams, cards, friendLink: f ? str(f.r[4], 300) : '' };
 }
 function deleteMyData(user) {
   return withLock(() => {

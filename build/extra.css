@@ -327,8 +327,23 @@
   .gospel-card { background: linear-gradient(135deg, #FFF6E4, var(--paper)); border: 1.5px solid var(--marigold); border-radius: 16px; padding: 12px 14px; margin: 12px 0 4px; }
   .gospel-card.compact { margin: 0 0 16px; }
   .gc-head { display: flex; align-items: center; gap: 10px; }
-  .gc-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--marigold); color: #fff; display: grid; place-items: center; flex: none; }
+  .gc-ic { width: 42px; height: 42px; border-radius: 11px; flex: none; object-fit: cover; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .gc-ic.fb { background: var(--marigold); color: #fff; display: grid; place-items: center; }
   .gc-head b { display: block; font-family: var(--serif); font-weight: 900; font-size: 17px; }
   .gc-head small { color: var(--ink-2); font-size: 12.5px; }
   .gc-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .gc-btns .btn.small { margin: 0; flex: 1; padding: 8px 6px; white-space: nowrap; }
+  .gc-btns + .gc-btns { margin-top: 6px; }
+  .btn.line-green { background: #06C755; color: #fff; }
+  .btn.line-green:active { background: #05a648; }
+  /* ---------- 加 LINE 好友 QR 碼 ---------- */
+  .friend-panel { width: min(380px, 100%); max-height: 90vh; overflow-y: auto; }
+  .qr-card { background: #fff; border-radius: 16px; padding: 18px 18px 14px; text-align: center; border: 1.5px solid var(--rule); }
+  .qr-k { margin: 0 0 8px !important; font-weight: 900; color: #06C755 !important; font-size: 16px !important; }
+  .qr-img { width: min(240px, 70vw); aspect-ratio: 1; margin: 0 auto; display: grid; place-items: center; }
+  .qr-img svg { width: 100%; height: 100%; display: block; }
+  .qr-name { margin: 10px 0 2px !important; font-family: var(--serif); font-weight: 900; font-size: 20px !important; color: var(--ink) !important; }
+  .qr-tip { margin: 0 !important; font-size: 12.5px !important; }
+  .friend-panel .btn-row { margin-top: 12px; }
+  .friend-panel h2 { font-size: 18px; }
+  .fr-steps { margin: 6px 0 12px; padding-left: 1.4em; font-size: 14px; line-height: 1.8; }
