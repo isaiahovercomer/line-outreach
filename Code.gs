@@ -79,6 +79,11 @@ function doPost(e) {
       case 'updateTeam':    need(T(), 'manage'); out = { ok: true, team: updateTeam(req.teamId, req.team || {}) }; break;
       case 'resetInvite':   need(T(), 'manage'); out = { ok: true, team: resetInvite(req.teamId) }; break;
       case 'deleteTeam':    needOwner(T()); deleteTeam(req.teamId); out = { ok: true }; break;
+      // 後台：建立者管理自己建立的開展隊；平台管理員管理全部
+      case 'adminTeams':    out = { ok: true, ...adminTeams(user) }; break;
+      case 'adminUpdate':   needTeamAdmin(user, req.teamId); out = { ok: true, team: updateTeam(req.teamId, req.team || {}) }; break;
+      case 'adminSetOpen':  (req.teamIds || []).forEach(id => { needTeamAdmin(user, id); setTeamOpen(id, !!req.open); }); out = { ok: true, ...adminTeams(user) }; break;
+      case 'adminDelete':   (req.teamIds || []).forEach(id => needTeamAdmin(user, id)); (req.teamIds || []).forEach(id => deleteTeam(id)); out = { ok: true, ...adminTeams(user) }; break;
       case 'setMember':     need(T(), 'manage'); setMember(T(), req.userId, req.title, req.perms); out = { ok: true, ...teamPayload(user, T()) }; break;
       case 'removeMember':  need(T(), 'manage'); removeMember(T(), req.userId); out = { ok: true, ...teamPayload(user, T()) }; break;
       case 'leaveTeam':     leaveTeam(T()); out = { ok: true }; break;
@@ -453,11 +458,33 @@ function teamPayload(user, ctx) {
   return { team, me: { userId: ctx.uid, name: ctx.name, perms: ctx.perms, member: ctx.member, isAdmin: isAdmin(ctx.uid) }, members, sessions, cards };
 }
 
+/** 後台：建立者看自己建立的，平台管理員看全部 */
+function needTeamAdmin(user, id) {
+  const t = rowToTeam(findTeam(id).r);
+  if (t.ownerId !== user.userId && !isAdmin(user.userId)) throw new Error('只有建立「' + t.title + '」的人或平台管理員可以管理');
+  return t;
+}
+function setTeamOpen(id, open) { const f = findTeam(id); sheet(SH.TEAMS).getRange(f.row, TM.OPEN + 1).setValue(open); }
+function adminTeams(user) {
+  const admin = isAdmin(user.userId), names = {};
+  rows(SH.PEOPLE).forEach(r => { names[String(r[0])] = String(r[1]); });
+  const mem = rows(SH.MEMBERS), ses = rows(SH.SESSIONS), cards = rows(SH.CARDS), cnt = rows(SH.COUNTS);
+  const teams = rows(SH.TEAMS).map(rowToTeam).filter(t => admin || t.ownerId === user.userId).map(t => {
+    const ss = ses.filter(r => String(r[SS.TID]) === t.id).map(r => ymdOf(r[SS.DATE])).sort();
+    return { id: t.id, title: t.title, desc: t.desc, start: t.start, end: t.end, theme: t.theme, open: t.open, code: t.code,
+      owner: names[t.ownerId] || t.owner, mine: t.ownerId === user.userId, created: t.created,
+      member: mem.some(r => String(r[MB.TID]) === t.id && String(r[MB.UID]) === user.userId),
+      memberCount: mem.filter(r => String(r[MB.TID]) === t.id).length, sessionCount: ss.length, lastDate: ss[ss.length - 1] || '',
+      cardCount: cards.filter(r => String(r[CD.TID]) === t.id).length, partCount: cnt.filter(r => String(r[CT.TID]) === t.id).length };
+  }).reverse();
+  return { isAdmin: admin, teams };
+}
+
 function listTeams(user) {
   const admin = isAdmin(user.userId), mem = rows(SH.MEMBERS), ses = rows(SH.SESSIONS), cards = rows(SH.CARDS);
   return rows(SH.TEAMS).map(rowToTeam).map(t => {
     const m = mem.filter(r => String(r[MB.TID]) === t.id), mine = m.filter(r => String(r[MB.UID]) === user.userId)[0];
-    if (!mine && !admin) return null;
+    if (!mine) return null; // 首頁只列自己加入的；平台管理員在「後台」看全部
     const ss = ses.filter(r => String(r[SS.TID]) === t.id).map(r => ymdOf(r[SS.DATE])).sort();
     return { id: t.id, title: t.title, desc: t.desc, start: t.start, end: t.end, theme: t.theme, owner: t.owner,
       member: !!mine, title2: mine ? String(mine[MB.TITLE] || '') : '', role: mine ? (String(mine[MB.PERMS]) === 'owner' ? 'owner' : (parsePerms(mine[MB.PERMS]).manage ? 'admin' : 'member')) : 'platform',

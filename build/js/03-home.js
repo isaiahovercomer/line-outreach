@@ -15,6 +15,7 @@ async function main() {
       api('session').then(setSession).catch(() => {}); // 背景建立 60 天通行證
     }
     if (PARAMS.has('mydata')) return myDataFlow();
+    if (PARAMS.has('admin') || DEMO_MODE === 'admin') return adminFlow();
     const join = PARAMS.get('join') || (DEMO_MODE === 'join' ? 'K7Q2M9XA' : '');
     if (join) return joinFlow(join);
     const tid = PARAMS.get('t') || (['team', 'session', 'sum', 'all', 'pray', 'mem', 'card'].includes(DEMO_MODE) ? 'T1' : '');
@@ -58,6 +59,7 @@ function renderHome() {
       <span class="tc-stats"><span><b>${t.sessionCount}</b>時段</span><span><b>${t.cardCount}</b>名單</span><span><b>${t.memberCount}</b>隊員</span></span></span></button>`; }).join('')
       || `<div class="empty"><p>還沒有加入任何開展隊。</p><p class="muted">點負責人傳來的邀請連結就能加入；或自己建立一個開展隊，邀請大家一起來。</p></div>`}</div>
     <button class="btn send" type="button" id="new-team" data-act="newTeam" style="margin-top:18px">${ICON.plus} 建立開展隊</button>
+    ${ME.isAdmin || teams.some(t => t.role === 'owner') ? `<button class="btn plain" type="button" id="to-admin" data-act="admin" style="margin-top:10px">${ICON.gear} 後台管理${ME.isAdmin ? '（平台管理員）' : ''}</button>` : ''}
     <div class="page-foot"><a class="mydata-link" href="#" data-act="mydata">我的資料</a><a class="mydata-link" href="#" data-act="install">安裝到手機桌面</a></div>`);
 }
 

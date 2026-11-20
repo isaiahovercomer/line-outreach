@@ -237,3 +237,31 @@
   .sec-h.stack { flex-direction: column-reverse; align-items: stretch; gap: 6px; }
   .sec-h.stack .tools { align-self: flex-end; }
   .ses-pick { margin-top: 12px; }
+
+  /* ---------- 後台管理 ---------- */
+  .adm-who { color: var(--ink-2); font-size: 14px; margin: 0 0 12px; }
+  .adm-who b { color: var(--line); }
+  .adm-bar { display: grid; gap: 10px; margin: 0 0 12px; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--sky-2); border-radius: 12px; padding: 3px; }
+  .seg button { border: 0; background: transparent; border-radius: 10px; padding: 8px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+  .seg button[aria-selected="true"] { background: var(--paper); color: var(--ink); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .adm-head { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 8px; }
+  .check-inline { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .check-inline input, .adm-check input { width: 20px; height: 20px; accent-color: var(--line); }
+  .adm-list { display: grid; gap: 10px; }
+  .adm-row { display: flex; gap: 10px; background: var(--paper); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 12px 12px 0; border-left: 6px solid var(--tc); }
+  .adm-row.sel { box-shadow: 0 0 0 2px var(--line), var(--shadow); }
+  .adm-check { padding: 2px 0 0 10px; cursor: pointer; }
+  .adm-main { flex: 1; min-width: 0; }
+  .adm-t { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .adm-t b { font-family: var(--serif); font-weight: 900; font-size: 17px; line-height: 1.4; }
+  .adm-main p { margin: 2px 0 0; }
+  .adm-stats { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--ink-2); margin-top: 6px !important; align-items: baseline; }
+  .adm-stats b { font-family: var(--serif); font-size: 18px; color: var(--ink); margin-right: 2px; }
+  .adm-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .adm-acts .btn.small { margin: 0; padding: 7px 12px; }
+  .adm-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--paper); border-top: 1px solid var(--rule); box-shadow: 0 -4px 18px rgba(30, 40, 30, .1); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .adm-dock .inner { max-width: 480px; margin: 0 auto; display: flex; align-items: center; gap: 6px; }
+  .adm-dock .inner > span { margin-right: auto; font-size: 14px; }
+  .adm-dock .btn.small { margin: 0; padding: 8px 10px; }
+  .btn.danger-fill.small { background: var(--stamp); color: #fff; }

@@ -588,6 +588,34 @@
   .sec-h.stack { flex-direction: column-reverse; align-items: stretch; gap: 6px; }
   .sec-h.stack .tools { align-self: flex-end; }
   .ses-pick { margin-top: 12px; }
+
+  /* ---------- 後台管理 ---------- */
+  .adm-who { color: var(--ink-2); font-size: 14px; margin: 0 0 12px; }
+  .adm-who b { color: var(--line); }
+  .adm-bar { display: grid; gap: 10px; margin: 0 0 12px; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--sky-2); border-radius: 12px; padding: 3px; }
+  .seg button { border: 0; background: transparent; border-radius: 10px; padding: 8px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+  .seg button[aria-selected="true"] { background: var(--paper); color: var(--ink); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .adm-head { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 8px; }
+  .check-inline { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .check-inline input, .adm-check input { width: 20px; height: 20px; accent-color: var(--line); }
+  .adm-list { display: grid; gap: 10px; }
+  .adm-row { display: flex; gap: 10px; background: var(--paper); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 12px 12px 0; border-left: 6px solid var(--tc); }
+  .adm-row.sel { box-shadow: 0 0 0 2px var(--line), var(--shadow); }
+  .adm-check { padding: 2px 0 0 10px; cursor: pointer; }
+  .adm-main { flex: 1; min-width: 0; }
+  .adm-t { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .adm-t b { font-family: var(--serif); font-weight: 900; font-size: 17px; line-height: 1.4; }
+  .adm-main p { margin: 2px 0 0; }
+  .adm-stats { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--ink-2); margin-top: 6px !important; align-items: baseline; }
+  .adm-stats b { font-family: var(--serif); font-size: 18px; color: var(--ink); margin-right: 2px; }
+  .adm-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .adm-acts .btn.small { margin: 0; padding: 7px 12px; }
+  .adm-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--paper); border-top: 1px solid var(--rule); box-shadow: 0 -4px 18px rgba(30, 40, 30, .1); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .adm-dock .inner { max-width: 480px; margin: 0 auto; display: flex; align-items: center; gap: 6px; }
+  .adm-dock .inner > span { margin-right: auto; font-size: 14px; }
+  .adm-dock .btn.small { margin: 0; padding: 8px 10px; }
+  .btn.danger-fill.small { background: var(--stamp); color: #fff; }
 </style>
 </head>
 <body>
@@ -786,6 +814,7 @@ const ICON = {
   all: svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
   pray: svg('<path d="M21 12a8.5 8.5 0 0 1-12.4 7.6L3 21l1.5-5A8.5 8.5 0 1 1 21 12z"/><path d="M12 15.5s-3.5-2-3.5-4.2a1.8 1.8 0 0 1 3.5-.6 1.8 1.8 0 0 1 3.5.6c0 2.2-3.5 4.2-3.5 4.2z"/>'),
   mem: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/>'),
+  gear: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
   minus: svg('<path d="M5 12h14"/>'),
   star: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
@@ -844,12 +873,23 @@ const demo = (() => {
   ];
   if (DEMO_MODE === 'first') { delete people.U2; }
   return {
-    me: { userId: 'U2', displayName: '晨光', isAdmin: false },
+    me: { userId: 'U2', displayName: '晨光', isAdmin: DEMO_MODE === 'admin' },
     people, members, sessions, counts, cards,
     team: { id: 'T1', title: '2026 秋季台中一中福音開展隊', desc: '每週出外開展，記錄接觸的人，一起為他們禱告。', start: '2026-11-01', end: '2026-12-20', theme: 'gospel', code: 'K7Q2M9XA', open: true, ownerId: 'U2', owner: '簡晨光', created: '2026/11/1' },
     teams: [{ id: 'T2', title: '寒假校園福音開展', desc: '', start: '2027-01-18', end: '2027-02-10', theme: 'sky', owner: '孫學暐', member: true, title2: '隊員', role: 'member', memberCount: 9, sessionCount: 0, lastDate: '', cardCount: 0 }],
   };
 })();
+/** 預覽：後台的開展隊列表（建立者只看到自己建立的；平台管理員看到全部） */
+demo.extra = [
+  { id: 'T2', title: '寒假校園福音開展', desc: '', start: '2027-01-18', end: '2027-02-10', theme: 'sky', open: true, owner: '孫學暐', mine: false, created: '2026/11/12', member: true, memberCount: 9, sessionCount: 0, lastDate: '', cardCount: 0, partCount: 0 },
+  { id: 'T3', title: '北屯社區叩門開展', desc: '', start: '2026-10-01', end: '2026-10-31', theme: 'harvest', open: false, owner: '王小明', mine: false, created: '2026/9/28', member: false, memberCount: 7, sessionCount: 8, lastDate: '2026-10-31', cardCount: 23, partCount: 41 },
+  { id: 'T4', title: '2026 夏季大專福音開展', desc: '', start: '2026-07-01', end: '2026-08-31', theme: 'youth', open: false, owner: '簡晨光', mine: true, created: '2026/6/20', member: true, memberCount: 12, sessionCount: 15, lastDate: '2026-08-29', cardCount: 46, partCount: 88 },
+];
+function demoAdmin() {
+  const d = demo, t1 = d.team.deleted ? [] : [{ ...d.team, owner: '簡晨光', mine: true, member: true, memberCount: d.members.length, sessionCount: d.sessions.length, lastDate: '2026-11-21', cardCount: d.cards.length, partCount: d.counts.length }];
+  const all = [...t1, ...d.extra];
+  return { isAdmin: d.me.isAdmin, teams: d.me.isAdmin ? all : all.filter(t => t.mine) };
+}
 const DPERM = s => { if (s === 'owner') return { owner: true, manage: true, session: true, contacts: true, editAll: true }; const a = String(s).split(','); return { owner: false, ...Object.fromEntries(PERMS.map(p => [p.k, a.includes(p.k)])) }; };
 const DPERMSTR = p => PERMS.filter(x => p && p[x.k]).map(x => x.k).join(',');
 
@@ -901,6 +941,10 @@ async function demoApi(action, p) {
     }
     case 'setCardFlags': { const x = d.cards.find(y => y.id === p.cardId); Object.assign(x, p.flags); return { ok: true, card: { ...x, owner: d.people[x.ownerId], canEdit: true } }; }
     case 'deleteCard': d.cards = d.cards.filter(y => y.id !== p.cardId); return { ok: true };
+    case 'adminTeams': return { ok: true, ...demoAdmin() };
+    case 'adminUpdate': { const t = demoAdmin().teams.find(x => x.id === p.teamId); if (t.id === 'T1') Object.assign(d.team, p.team); else Object.assign(d.extra.find(x => x.id === t.id), p.team); return { ok: true, team: t }; }
+    case 'adminSetOpen': p.teamIds.forEach(id => { if (id === 'T1') d.team.open = p.open; else d.extra.find(x => x.id === id).open = p.open; }); return { ok: true, ...demoAdmin() };
+    case 'adminDelete': d.extra = d.extra.filter(x => !p.teamIds.includes(x.id)); if (p.teamIds.includes('T1')) d.team.deleted = true; return { ok: true, ...demoAdmin() };
     case 'uploadImage': return { ok: true, url: p.data };
     case 'myData': return { ok: true, found: !!d.people[me], name: d.people[me] || '', lineName: '簡晨光 Isaiah', teams: 2, cards: d.cards.filter(c => c.ownerId === me).length };
     case 'deleteMyData': return { ok: true, cards: 0 };
@@ -1005,6 +1049,7 @@ async function main() {
       api('session').then(setSession).catch(() => {}); // 背景建立 60 天通行證
     }
     if (PARAMS.has('mydata')) return myDataFlow();
+    if (PARAMS.has('admin') || DEMO_MODE === 'admin') return adminFlow();
     const join = PARAMS.get('join') || (DEMO_MODE === 'join' ? 'K7Q2M9XA' : '');
     if (join) return joinFlow(join);
     const tid = PARAMS.get('t') || (['team', 'session', 'sum', 'all', 'pray', 'mem', 'card'].includes(DEMO_MODE) ? 'T1' : '');
@@ -1048,6 +1093,7 @@ function renderHome() {
       <span class="tc-stats"><span><b>${t.sessionCount}</b>時段</span><span><b>${t.cardCount}</b>名單</span><span><b>${t.memberCount}</b>隊員</span></span></span></button>`; }).join('')
       || `<div class="empty"><p>還沒有加入任何開展隊。</p><p class="muted">點負責人傳來的邀請連結就能加入；或自己建立一個開展隊，邀請大家一起來。</p></div>`}</div>
     <button class="btn send" type="button" id="new-team" data-act="newTeam" style="margin-top:18px">${ICON.plus} 建立開展隊</button>
+    ${ME.isAdmin || teams.some(t => t.role === 'owner') ? `<button class="btn plain" type="button" id="to-admin" data-act="admin" style="margin-top:10px">${ICON.gear} 後台管理${ME.isAdmin ? '（平台管理員）' : ''}</button>` : ''}
     <div class="page-foot"><a class="mydata-link" href="#" data-act="mydata">我的資料</a><a class="mydata-link" href="#" data-act="install">安裝到手機桌面</a></div>`);
 }
 
@@ -1813,11 +1859,12 @@ document.addEventListener('focusin', e => { if (e.target.matches('[data-cnt]')) 
 /* ================= 使用教學（金框導覽） =================
    之後加功能時：新步驟標上 since: 新版本號，並把 TOUR_VERSION 加 1 */
 const TOUR_KEY = 'outreach.tour';
-const TOUR_VERSION = 1;
+const TOUR_VERSION = 2;
 const q1 = sel => document.querySelector(sel);
 const TOUR_STEPS = [
   { since: 1, where: 'home', target: () => q1('#new-team'), title: '建立開展隊', text: '任何人都能建立開展隊（例如一次福音開展活動），建立的人就是負責人，可以發邀請連結給大家加入。' },
   { since: 1, where: 'home', target: () => q1('.team-card'), title: '我的開展隊', text: '加入的開展隊都在這裡，點進去就能記錄和看彙整。' },
+  { since: 2, where: 'home', target: () => q1('#to-admin'), title: '後台管理', text: '建立開展隊的人可以在後台一次管理自己建立的開展隊：選取、修改、開放或關閉加入、刪除。平台管理員看得到所有開展隊。' },
   { since: 1, where: 'team', tab: 'rec', target: () => q1('#new-ses') || q1('.ses-card'), title: '開展時段', text: '每次出去開展，先建立一個時段（時間、地點、要計數的項目），其他人點進去就能加入一起記錄。' },
   { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#counters'), title: '計數器', text: '按＋－記錄接觸人數、叩訪戶數、發單張數…，也可以直接點數字輸入，會自動儲存。' },
   { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#new-card'), title: '記名卡片', text: '遇到願意留資料的人就新增一張記名卡片，欄位都可以不填；勾「福、家、排、區」和「迫切代禱」，名字會出現在代禱牆。' },
@@ -1919,7 +1966,100 @@ function endTour() {
   t.el.classList.remove('on'); setTimeout(() => t.el.remove(), 220);
   if (TEAM && $app.querySelector('.team-wrap')) { TAB = t.from.tab; SUB = t.from.sub; renderTeam(); }
 }
-
+/* ================= 後台管理 =================
+   建立開展隊的人：管理自己建立的開展隊；平台管理員（試算表「管理員」工作表）：管理全部 */
+let ADM = null;                 // { isAdmin, teams }
+const ADM_SEL = new Set();      // 勾選的開展隊
+let ADM_Q = '', ADM_SCOPE = 'all', ADM_EDIT = '';
+async function adminFlow() {
+  setNav(null); TEAM = null;
+  document.title = '後台管理';
+  history.replaceState(null, '', location.pathname + (DEMO ? '?demo=admin' : '?admin'));
+  if (!ADM) view(`${subbar('我的開展隊', '後台管理')}${loading()}`);
+  const nav = NAV;
+  const r = await apiCached('adminTeams', {}, fresh => { ADM = fresh; if (nav === NAV && !ADM_EDIT) renderAdmin(true); });
+  ADM = r; ADM_SEL.clear(); ADM_EDIT = '';
+  renderAdmin();
+}
+function admShown() {
+  const q = ADM_Q.trim().toLowerCase();
+  return ADM.teams.filter(t => (ADM_SCOPE !== 'mine' || t.mine) && (!q || `${t.title} ${t.owner} ${t.desc}`.toLowerCase().includes(q)));
+}
+function renderAdmin(keep) {
+  if (ADM_EDIT) return renderAdminEdit(ADM.teams.find(t => t.id === ADM_EDIT));
+  const shown = admShown(), sum = k => shown.reduce((n, t) => n + (t[k] || 0), 0);
+  [...ADM_SEL].forEach(id => { if (!ADM.teams.some(t => t.id === id)) ADM_SEL.delete(id); });
+  const allOn = shown.length && shown.every(t => ADM_SEL.has(t.id));
+  view(`${subbar('我的開展隊', '後台管理')}
+    <p class="adm-who">${ADM.isAdmin ? '你是<b>平台管理員</b>，可以管理所有開展隊。' : '這裡列出你建立的開展隊，可以修改、開放／關閉加入、刪除。'}</p>
+    <section class="panel" id="adm-sum">
+      <div class="sec-h"><h2>總覽</h2>${tools('admin', 'adm-sum', '後台總覽')}</div>
+      <div class="tiles"><div class="tile"><b>${shown.length}</b><small>開展隊</small></div><div class="tile"><b>${sum('memberCount')}</b><small>隊員</small></div><div class="tile"><b>${sum('sessionCount')}</b><small>時段</small></div>
+        <div class="tile"><b>${sum('partCount')}</b><small>參與人次</small></div><div class="tile"><b>${sum('cardCount')}</b><small>名單</small></div><div class="tile"><b>${shown.filter(t => t.open).length}</b><small>開放加入</small></div></div>
+    </section>
+    <div class="adm-bar no-shot">
+      <input class="inp" id="adm-q" type="search" placeholder="搜尋開展隊名稱、建立者" value="${esc(ADM_Q)}">
+      ${ADM.isAdmin ? `<div class="seg" role="tablist"><button type="button" data-act="admScope" data-k="all" aria-selected="${ADM_SCOPE === 'all'}">全部 ${ADM.teams.length}</button><button type="button" data-act="admScope" data-k="mine" aria-selected="${ADM_SCOPE === 'mine'}">我建立的 ${ADM.teams.filter(t => t.mine).length}</button></div>` : ''}
+    </div>
+    <div class="adm-head no-shot"><label class="check-inline"><input type="checkbox" id="adm-all" ${allOn ? 'checked' : ''}><span>全選</span></label><span class="muted small">${shown.length} 個開展隊</span></div>
+    <div class="adm-list">${shown.map(admRow).join('') || `<div class="empty"><p>${ADM_Q ? '找不到符合的開展隊。' : '還沒有建立任何開展隊。'}</p></div>`}</div>
+    ${ADM_SEL.size ? `<div class="adm-dock no-shot"><div class="inner"><span><b>${ADM_SEL.size}</b> 個已選</span>
+      <button class="btn plain small" type="button" data-act="admBulkOpen" data-v="1">開放加入</button><button class="btn plain small" type="button" data-act="admBulkOpen" data-v="0">關閉加入</button>
+      <button class="btn danger-fill small" type="button" data-act="admBulkDel">刪除</button></div></div>` : ''}`, keep);
+  const q = $('adm-q');
+  q.oninput = () => { ADM_Q = q.value; const pos = q.selectionStart; renderAdmin(true); const n = $('adm-q'); n.focus(); n.setSelectionRange(pos, pos); };
+  $('adm-all').onchange = e => { shown.forEach(t => e.target.checked ? ADM_SEL.add(t.id) : ADM_SEL.delete(t.id)); renderAdmin(true); };
+}
+function admRow(t) {
+  const th = themeOf(t);
+  return `<article class="adm-row ${ADM_SEL.has(t.id) ? 'sel' : ''}" style="--tc:${th.btn};--tn:${th.notch}">
+    <label class="adm-check no-shot" aria-label="選取 ${esc(t.title)}"><input type="checkbox" data-adm-sel="${esc(t.id)}" ${ADM_SEL.has(t.id) ? 'checked' : ''}></label>
+    <div class="adm-main">
+      <div class="adm-t"><b>${esc(t.title)}</b><span class="state ${t.open ? 's-on' : 's-end'}">${t.open ? '開放加入' : '不開放'}</span></div>
+      <p class="muted small">${esc(periodLabel(t.start, t.end) || '未設定期間')}・建立者 ${esc(t.owner)}${t.mine ? '（我）' : ''}・${esc(t.created)} 建立</p>
+      <p class="adm-stats"><span><b>${t.memberCount}</b>隊員</span><span><b>${t.sessionCount}</b>時段</span><span><b>${t.partCount || 0}</b>人次</span><span><b>${t.cardCount}</b>名單</span>${t.lastDate ? `<span class="muted small">最近 ${esc(dayLabel(t.lastDate))}</span>` : ''}</p>
+      <div class="adm-acts no-shot">
+        <button class="btn send small" type="button" data-act="admOpenTeam" data-id="${esc(t.id)}">進入</button>
+        <button class="btn plain small" type="button" data-act="admEdit" data-id="${esc(t.id)}">修改</button>
+        <button class="btn plain small" type="button" data-act="admToggle" data-id="${esc(t.id)}">${t.open ? '關閉加入' : '開放加入'}</button>
+        <button class="btn cancel small" type="button" data-act="admDel" data-id="${esc(t.id)}">刪除</button>
+      </div></div></article>`;
+}
+function renderAdminEdit(t) {
+  if (!t) { ADM_EDIT = ''; return renderAdmin(); }
+  view(`${subbar('後台管理', '修改開展隊', 'admBack')}${teamForm(t, false)}<p class="caption">建立者：${esc(t.owner)}・隊員 ${t.memberCount} 人</p>`);
+  bindTeamForm(async team => {
+    await api('adminUpdate', { teamId: t.id, team });
+    ADM_EDIT = ''; HOME = null; toast('已儲存');
+    const r = await api('adminTeams'); ADM = r; renderAdmin();
+  });
+}
+async function admDelete(ids) {
+  const list = ADM.teams.filter(t => ids.includes(t.id));
+  const cards = list.reduce((n, t) => n + t.cardCount, 0), ses = list.reduce((n, t) => n + t.sessionCount, 0);
+  const title = list.length === 1 ? `刪除「${list[0].title}」？` : `刪除選取的 ${list.length} 個開展隊？`;
+  if (!await confirmBox({ title, text: `${list.length > 1 ? list.map(t => `「${t.title}」`).join('、') + '。' : ''}會一併刪除 ${ses} 個時段、所有計數和 ${cards} 張記名卡片，隊員也看不到了，無法復原。`, ok: '刪除' })) return;
+  const r = await api('adminDelete', { teamIds: ids });
+  ids.forEach(id => ADM_SEL.delete(id)); ADM = r; HOME = null; TEAM = null;
+  toast(`已刪除 ${list.length} 個開展隊`); renderAdmin(true);
+}
+async function admSetOpen(ids, open) {
+  const r = await api('adminSetOpen', { teamIds: ids, open });
+  ADM = r; HOME = null; toast(open ? '已開放加入' : '已關閉加入'); renderAdmin(true);
+}
+Object.assign(ACTS, {
+  admin: () => { ADM = null; adminFlow(); },
+  admBack: () => { ADM_EDIT = ''; renderAdmin(); },
+  admScope: b => { ADM_SCOPE = b.dataset.k; renderAdmin(true); },
+  admOpenTeam: b => teamFlow(b.dataset.id, 'rec', ''),
+  admEdit: b => { ADM_EDIT = b.dataset.id; renderAdmin(); },
+  admToggle: b => { const t = ADM.teams.find(x => x.id === b.dataset.id); return admSetOpen([t.id], !t.open); },
+  admDel: b => admDelete([b.dataset.id]),
+  admBulkDel: () => admDelete([...ADM_SEL]),
+  admBulkOpen: b => admSetOpen([...ADM_SEL], b.dataset.v === '1'),
+});
+document.addEventListener('change', e => { const id = e.target.dataset && e.target.dataset.admSel; if (id) { e.target.checked ? ADM_SEL.add(id) : ADM_SEL.delete(id); renderAdmin(true); } });
+COPY.admin = () => { const l = admShown(); return [`【開展隊後台】${l.length} 個開展隊`, ...l.map((t, i) => `${i + 1}. ${t.title}（${t.open ? '開放加入' : '不開放'}）建立者 ${t.owner}・隊員 ${t.memberCount}・時段 ${t.sessionCount}・名單 ${t.cardCount}`)].join('\n'); };
 main();
 </script>
 </body>

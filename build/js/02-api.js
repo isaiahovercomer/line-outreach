@@ -46,12 +46,23 @@ const demo = (() => {
   ];
   if (DEMO_MODE === 'first') { delete people.U2; }
   return {
-    me: { userId: 'U2', displayName: '晨光', isAdmin: false },
+    me: { userId: 'U2', displayName: '晨光', isAdmin: DEMO_MODE === 'admin' },
     people, members, sessions, counts, cards,
     team: { id: 'T1', title: '2026 秋季台中一中福音開展隊', desc: '每週出外開展，記錄接觸的人，一起為他們禱告。', start: '2026-11-01', end: '2026-12-20', theme: 'gospel', code: 'K7Q2M9XA', open: true, ownerId: 'U2', owner: '簡晨光', created: '2026/11/1' },
     teams: [{ id: 'T2', title: '寒假校園福音開展', desc: '', start: '2027-01-18', end: '2027-02-10', theme: 'sky', owner: '孫學暐', member: true, title2: '隊員', role: 'member', memberCount: 9, sessionCount: 0, lastDate: '', cardCount: 0 }],
   };
 })();
+/** 預覽：後台的開展隊列表（建立者只看到自己建立的；平台管理員看到全部） */
+demo.extra = [
+  { id: 'T2', title: '寒假校園福音開展', desc: '', start: '2027-01-18', end: '2027-02-10', theme: 'sky', open: true, owner: '孫學暐', mine: false, created: '2026/11/12', member: true, memberCount: 9, sessionCount: 0, lastDate: '', cardCount: 0, partCount: 0 },
+  { id: 'T3', title: '北屯社區叩門開展', desc: '', start: '2026-10-01', end: '2026-10-31', theme: 'harvest', open: false, owner: '王小明', mine: false, created: '2026/9/28', member: false, memberCount: 7, sessionCount: 8, lastDate: '2026-10-31', cardCount: 23, partCount: 41 },
+  { id: 'T4', title: '2026 夏季大專福音開展', desc: '', start: '2026-07-01', end: '2026-08-31', theme: 'youth', open: false, owner: '簡晨光', mine: true, created: '2026/6/20', member: true, memberCount: 12, sessionCount: 15, lastDate: '2026-08-29', cardCount: 46, partCount: 88 },
+];
+function demoAdmin() {
+  const d = demo, t1 = d.team.deleted ? [] : [{ ...d.team, owner: '簡晨光', mine: true, member: true, memberCount: d.members.length, sessionCount: d.sessions.length, lastDate: '2026-11-21', cardCount: d.cards.length, partCount: d.counts.length }];
+  const all = [...t1, ...d.extra];
+  return { isAdmin: d.me.isAdmin, teams: d.me.isAdmin ? all : all.filter(t => t.mine) };
+}
 const DPERM = s => { if (s === 'owner') return { owner: true, manage: true, session: true, contacts: true, editAll: true }; const a = String(s).split(','); return { owner: false, ...Object.fromEntries(PERMS.map(p => [p.k, a.includes(p.k)])) }; };
 const DPERMSTR = p => PERMS.filter(x => p && p[x.k]).map(x => x.k).join(',');
 
@@ -103,6 +114,10 @@ async function demoApi(action, p) {
     }
     case 'setCardFlags': { const x = d.cards.find(y => y.id === p.cardId); Object.assign(x, p.flags); return { ok: true, card: { ...x, owner: d.people[x.ownerId], canEdit: true } }; }
     case 'deleteCard': d.cards = d.cards.filter(y => y.id !== p.cardId); return { ok: true };
+    case 'adminTeams': return { ok: true, ...demoAdmin() };
+    case 'adminUpdate': { const t = demoAdmin().teams.find(x => x.id === p.teamId); if (t.id === 'T1') Object.assign(d.team, p.team); else Object.assign(d.extra.find(x => x.id === t.id), p.team); return { ok: true, team: t }; }
+    case 'adminSetOpen': p.teamIds.forEach(id => { if (id === 'T1') d.team.open = p.open; else d.extra.find(x => x.id === id).open = p.open; }); return { ok: true, ...demoAdmin() };
+    case 'adminDelete': d.extra = d.extra.filter(x => !p.teamIds.includes(x.id)); if (p.teamIds.includes('T1')) d.team.deleted = true; return { ok: true, ...demoAdmin() };
     case 'uploadImage': return { ok: true, url: p.data };
     case 'myData': return { ok: true, found: !!d.people[me], name: d.people[me] || '', lineName: '簡晨光 Isaiah', teams: 2, cards: d.cards.filter(c => c.ownerId === me).length };
     case 'deleteMyData': return { ok: true, cards: 0 };
