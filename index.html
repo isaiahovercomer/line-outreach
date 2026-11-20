@@ -57,7 +57,7 @@ const LIFF_ID="2012412693-u3yd2OOT",GAS_URL="https://script.google.com/macros/s/
       <div class="img-field"><span class="img-pv" id="tf-pv" style="--tc:${themeOf(e).btn}">${e.image?`<img src="${esc(e.image)}" alt="">`:esc((e.title||"開").slice(0,1))}</span>
         <div class="img-btns"><label class="btn plain small">${ICON.image} 上傳圖片<input type="file" accept="image/*" id="tf-file" hidden></label>
           ${e.image?'<button type="button" class="link-btn danger" id="tf-clear">移除圖片</button>':'<button type="button" class="link-btn danger" id="tf-clear" hidden>移除圖片</button>'}</div></div>
-      <input name="image" class="inp" type="url" inputmode="url" placeholder="或貼上圖片網址 https://…" value="${esc(e.image||"")}" style="margin-top:8px">
+      <input name="image" class="inp" type="text" inputmode="url" autocapitalize="off" placeholder="或貼上圖片網址 https://…" value="${esc(e.image||"")}" style="margin-top:8px">
       <p class="help" id="tf-st"></p></div>
     ${t?'<label class="field"><span>你在這個隊的職稱</span><input name="myTitle" maxlength="12" value="隊長"></label>':""}
     <div class="field"><span>色調</span><div class="tones" role="radiogroup">${Object.entries(THEMES).map(([s,l])=>`<button type="button" role="radio" aria-checked="${e.theme===s}" data-tone="${s}" style="--sw:${l.btn};--sw2:${l.notch}"><i></i>${l.name}</button>`).join("")}</div></div>

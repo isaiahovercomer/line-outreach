@@ -78,7 +78,7 @@ function teamForm(t, isNew) {
       <div class="img-field"><span class="img-pv" id="tf-pv" style="--tc:${themeOf(t).btn}">${t.image ? `<img src="${esc(t.image)}" alt="">` : esc((t.title || '開').slice(0, 1))}</span>
         <div class="img-btns"><label class="btn plain small">${ICON.image} 上傳圖片<input type="file" accept="image/*" id="tf-file" hidden></label>
           ${t.image ? '<button type="button" class="link-btn danger" id="tf-clear">移除圖片</button>' : '<button type="button" class="link-btn danger" id="tf-clear" hidden>移除圖片</button>'}</div></div>
-      <input name="image" class="inp" type="url" inputmode="url" placeholder="或貼上圖片網址 https://…" value="${esc(t.image || '')}" style="margin-top:8px">
+      <input name="image" class="inp" type="text" inputmode="url" autocapitalize="off" placeholder="或貼上圖片網址 https://…" value="${esc(t.image || '')}" style="margin-top:8px">
       <p class="help" id="tf-st"></p></div>
     ${isNew ? `<label class="field"><span>你在這個隊的職稱</span><input name="myTitle" maxlength="12" value="隊長"></label>` : ''}
     <div class="field"><span>色調</span><div class="tones" role="radiogroup">${Object.entries(THEMES).map(([k, th]) => `<button type="button" role="radio" aria-checked="${t.theme === k}" data-tone="${k}" style="--sw:${th.btn};--sw2:${th.notch}"><i></i>${th.name}</button>`).join('')}</div></div>
