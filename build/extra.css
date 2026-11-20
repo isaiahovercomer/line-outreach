@@ -310,3 +310,15 @@
   .home-link:active { opacity: .75; }
   .team-top .plat { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
   .team-top .plat img { width: 12px; height: 16px; }
+
+  /* ---------- 時間選擇（24 小時制／上午下午） ---------- */
+  .time-mode { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; font-size: 14px; color: var(--ink-2); }
+  .time-mode .seg { flex: none; }
+  .time-mode .seg button { padding: 6px 12px; font-size: 13px; }
+  .tpick { display: flex; align-items: center; gap: 4px; }
+  .tpick b { color: var(--ink-2); }
+  .tpick select.inp { padding: 10px 26px 10px 10px; min-height: 46px; background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%; flex: 1; min-width: 0; text-align: center; font-variant-numeric: tabular-nums; }
+  .tpick.ampm .tp-ap { flex: 1.1; }
+  .slot .tpick select.inp { background-color: var(--paper); }
+  .field > .tpick { display: flex; margin: 0; font-size: 16px; color: var(--ink); }
+  .row2:has(.tpick.ampm) { grid-template-columns: 1fr; }

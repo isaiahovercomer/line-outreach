@@ -11,6 +11,7 @@ const ACTS = {
   openSes: b => { TAB = 'rec'; SUB = b.dataset.id; renderTeam(); },
   toSum: b => { flushCounts(); TAB = 'ses'; SUB = b.dataset.id; renderTeam(); },
   newSes: () => sesFormFlow(null),
+  timeMode: b => { TIME24 = b.dataset.v === '1'; try { localStorage.setItem(TIME_KEY, TIME24 ? '1' : '0'); } catch (e) {} redrawTimePicks(); },
   addSlot: () => { readSlots(); const last = SLOTS[SLOTS.length - 1], d = parseYmd(last.date) || now(); SLOTS.push({ date: ymd(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)), start: SLOTS[0].start, end: SLOTS[0].end }); drawSlots(); },
   rmSlot: b => { readSlots(); SLOTS.splice(+b.dataset.i, 1); drawSlots(); },
   repeat: b => { readSlots(); REPEAT.mode = b.dataset.k; if (REPEAT.mode === 'custom' && !REPEAT.days.length) { const d = parseYmd(SLOTS[0].date); if (d) REPEAT.days = [d.getDay()]; } drawSlots(); },
@@ -134,6 +135,7 @@ document.addEventListener('change', e => {
   if (t.matches('[data-cnt]')) setCount(t.dataset.cnt, t.value);
   else if (t.matches('[data-photo]')) uploadPhoto(t);
   else if (t.id === 'sum-pick') { SUB = t.value; renderTeam(true); }
+  else if (t.closest && t.closest('[data-tp]') && t.tagName === 'SELECT') syncTimePick(t.closest('[data-tp]'));
 });
 document.addEventListener('focusin', e => { if (e.target.matches('[data-cnt]')) e.target.select(); });
 
