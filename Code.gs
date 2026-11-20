@@ -14,7 +14,7 @@ const HEADERS = {
   '使用者': ['LINE userId', '姓名', 'LINE名稱', '更新時間', '加好友連結'],
   '開展隊': ['隊代碼', '名稱', '說明', '開始日', '結束日', '色調', '邀請碼', '開放加入', '建立者', '建立時間', '圖片'],
   '隊員': ['隊代碼', 'LINE userId', '姓名', '職稱', '權限', '加入時間'],
-  '時段': ['時段代碼', '隊代碼', '名稱', '日期', '開始', '結束', '地點', '計數項目', '建立者 userId', '建立者', '建立時間', '備註'],
+  '時段': ['時段代碼', '隊代碼', '名稱', '日期', '開始', '結束', '地點', '計數項目', '建立者 userId', '建立者', '建立時間', '備註', '分類色調'],
   '計數': ['時段代碼', '隊代碼', 'LINE userId', '計數', '加入時間', '更新時間'],
   '名單卡': ['卡片代碼', '隊代碼', '時段代碼', '開展者 userId', '開展者', '姓名', '身分', '年齡段', '手機', 'LINE ID', '地址', '敞開程度', '照片',
     '福', '家', '排', '區', '迫切代禱', '備註', '建立時間', '更新時間'],
@@ -22,7 +22,10 @@ const HEADERS = {
 };
 const TM = { ID: 0, TITLE: 1, DESC: 2, START: 3, END: 4, THEME: 5, CODE: 6, OPEN: 7, CREATOR: 8, CREATED: 9, IMAGE: 10 };
 const MB = { TID: 0, UID: 1, NAME: 2, TITLE: 3, PERMS: 4, JOINED: 5 };
-const SS = { ID: 0, TID: 1, TITLE: 2, DATE: 3, START: 4, END: 5, PLACE: 6, ITEMS: 7, CUID: 8, CNAME: 9, CREATED: 10, NOTE: 11 };
+const SS = { ID: 0, TID: 1, TITLE: 2, DATE: 3, START: 4, END: 5, PLACE: 6, ITEMS: 7, CUID: 8, CNAME: 9, CREATED: 10, NOTE: 11, COLOR: 12 };
+/** 時段分類色調（前端顯示名稱與顏色） */
+const SES_COLORS = ['street', 'campus', 'door', 'park', 'youth', 'event', 'home', 'other'];
+function sesColor(v) { return SES_COLORS.indexOf(String(v || '')) >= 0 ? String(v) : ''; }
 const CT = { SID: 0, TID: 1, UID: 2, COUNTS: 3, JOINED: 4, UPDATED: 5 };
 const CD = { ID: 0, TID: 1, SID: 2, UID: 3, UNAME: 4, NAME: 5, GENDER: 6, AGE: 7, PHONE: 8, LINEID: 9, ADDR: 10, OPEN: 11, PHOTOS: 12,
   FU: 13, JIA: 14, PAI: 15, QU: 16, URGENT: 17, NOTE: 18, CREATED: 19, UPDATED: 20 };
@@ -349,7 +352,7 @@ function canEditSession(ctx, f) { return ctx.perms.manage || String(f.r[SS.CUID]
 function createSessionRow(ctx, input) {
   const v = sessionValues(input), id = newId('S'), now = new Date();
   withLock(() => {
-    sheet(SH.SESSIONS).appendRow([id, ctx.tid].concat(v, [ctx.uid, ctx.name, now, str(input.note, 300)]));
+    sheet(SH.SESSIONS).appendRow([id, ctx.tid].concat(v, [ctx.uid, ctx.name, now, str(input.note, 300), sesColor(input.color)]));
     sheet(SH.COUNTS).appendRow([id, ctx.tid, ctx.uid, '{}', now, now]); // 建立者自動加入
   });
   return id;
@@ -364,7 +367,7 @@ function createSessionRows(ctx, base, slots) {
     const v = sessionValues(Object.assign({}, base, { date: sl.date, start: sl.start, end: sl.end }));
     const id = 'S' + fmt(now, 'yyMMddHHmmss') + String(100 + i) + Math.floor(Math.random() * 90 + 10);
     ids.push(id);
-    rowsS.push([id, ctx.tid].concat(v, [ctx.uid, ctx.name, now, str(base.note, 300)]));
+    rowsS.push([id, ctx.tid].concat(v, [ctx.uid, ctx.name, now, str(base.note, 300), sesColor(base.color)]));
     rowsC.push([id, ctx.tid, ctx.uid, '{}', now, now]);
   });
   withLock(() => {
@@ -379,7 +382,7 @@ function updateSession(ctx, sid, input) {
   if (!canEditSession(ctx, f)) throw new Error('只有建立這個時段的人可以修改');
   const v = sessionValues(input);
   sheet(SH.SESSIONS).getRange(f.row, SS.TITLE + 1, 1, v.length).setValues([v]);
-  sheet(SH.SESSIONS).getRange(f.row, SS.NOTE + 1).setValue(str(input.note, 300));
+  sheet(SH.SESSIONS).getRange(f.row, SS.NOTE + 1, 1, 2).setValues([[str(input.note, 300), sesColor(input.color)]]);
 }
 function deleteSessionRow(ctx, sid) {
   const f = findSession(ctx, sid);
@@ -489,7 +492,7 @@ function teamPayload(user, ctx) {
     const sid = String(r[SS.ID]);
     return { id: sid, title: String(r[SS.TITLE] || ''), date: ymdOf(r[SS.DATE]), start: hhmm(r[SS.START]), end: hhmm(r[SS.END]), place: String(r[SS.PLACE] || ''),
       items: cleanItems(parseJson(r[SS.ITEMS], ITEMS)), creatorId: String(r[SS.CUID]), creator: names[String(r[SS.CUID])] || String(r[SS.CNAME]),
-      created: timeStr(r[SS.CREATED]), note: String(r[SS.NOTE] || ''),
+      created: timeStr(r[SS.CREATED]), note: String(r[SS.NOTE] || ''), color: sesColor(r[SS.COLOR]),
       parts: counts.filter(c => String(c[CT.SID]) === sid).map(c => ({ userId: String(c[CT.UID]), name: names[String(c[CT.UID])] || '', counts: parseJson(c[CT.COUNTS], {}) || {}, updated: timeStr(c[CT.UPDATED]) })) };
   });
   // 沒有「看聯絡資料」權限的人：別人卡片上的手機、LINE ID、地址、照片、備註不送到手機上

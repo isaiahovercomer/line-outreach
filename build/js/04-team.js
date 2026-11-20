@@ -98,20 +98,36 @@ async function openUrl(url) {
 }
 
 /* ================= 開展紀錄：時段列表 ================= */
+/* ---------- 時段分類色調：建立時選一個，列表上用顏色區分，也能依分類篩選 ---------- */
+const SES_COLORS = [
+  { k: 'street', name: '街頭', c: '#2C7A55' }, { k: 'campus', name: '校園', c: '#2B5C8A' }, { k: 'door', name: '社區叩門', c: '#C0661A' }, { k: 'park', name: '公園', c: '#14837C' },
+  { k: 'youth', name: '青年', c: '#6B46A3' }, { k: 'event', name: '特別聚會', c: '#B03A55' }, { k: 'home', name: '家訪', c: '#8A5A2B' }, { k: 'other', name: '其他', c: '#6B7280' },
+];
+const sesColorOf = s => SES_COLORS.find(x => x.k === (s && s.color)) || null;
+let SES_FILTER = '';
+const colorPicker = cur => `<div class="field"><span>分類色調（選填，列表上用顏色區分，也能依分類篩選）</span><div class="scolors" role="radiogroup">
+    <button type="button" role="radio" data-scolor="" aria-checked="${!cur}" style="--sc:var(--rule)"><i></i>不分類</button>
+    ${SES_COLORS.map(x => `<button type="button" role="radio" data-scolor="${x.k}" aria-checked="${cur === x.k}" style="--sc:${x.c}"><i></i>${x.name}</button>`).join('')}</div></div>`;
+
 function renderRec() {
   if (SUB) return renderSession(sesById(SUB));
-  const list = sortSes(TEAM.sessions), me = TEAM.me.userId;
+  const all = sortSes(TEAM.sessions), me = TEAM.me.userId;
+  const used = SES_COLORS.filter(x => all.some(s => s.color === x.k));
+  if (SES_FILTER && !used.some(x => x.k === SES_FILTER)) SES_FILTER = '';
+  const list = SES_FILTER ? all.filter(s => s.color === SES_FILTER) : all;
+  const filterBar = used.length ? `<div class="chips ses-filter no-shot"><button class="chip ${!SES_FILTER ? 'on' : ''}" type="button" data-act="sesFilter" data-k="">全部 ${all.length}</button>${used.map(x => `<button class="chip cchip ${SES_FILTER === x.k ? 'on' : ''}" type="button" data-act="sesFilter" data-k="${x.k}" style="--sc:${x.c}"><i></i>${x.name} ${all.filter(s => s.color === x.k).length}</button>`).join('')}</div>` : '';
   const groups = [['進行中、今天', list.filter(s => ['進行中', '今天'].includes(sesState(s)))], ['接下來', list.filter(s => sesState(s) === '即將').reverse()], ['已結束', list.filter(s => sesState(s) === '已結束')]];
   return `${gospelCard()}<div class="sec-h"><h2>開展時段</h2>${TEAM.me.perms.session ? `<button class="btn send small" type="button" id="new-ses" data-act="newSes">${ICON.plus} 建立時段</button>` : ''}</div>
+    ${filterBar}
     ${list.length ? groups.filter(g => g[1].length).map(([h, l]) => `<h3 class="grp-h">${h}</h3><div class="ses-list">${l.map(s => sesCard(s, me)).join('')}</div>`).join('')
       : `<div class="empty"><p>還沒有開展時段。</p><p class="muted">${TEAM.me.perms.session ? '按右上角「建立時段」，填時間、地點，大家就能加入一起記錄。' : '等負責人或隊友建立開展時段後，就能加入記錄。'}</p></div>`}`;
 }
 function sesCard(s, me) {
-  const d = parseYmd(s.date), st = sesState(s), joined = !!partOf(s, me), mine = cardsIn(s.id, me).length;
-  return `<button class="ses-card" type="button" data-act="openSes" data-id="${esc(s.id)}">
+  const d = parseYmd(s.date), st = sesState(s), joined = !!partOf(s, me), mine = cardsIn(s.id, me).length, sc = sesColorOf(s);
+  return `<button class="ses-card ${sc ? 'colored' : ''}" type="button" data-act="openSes" data-id="${esc(s.id)}" ${sc ? `style="--sc:${sc.c}"` : ''}>
     <span class="date"><b>${d ? d.getDate() : ''}</b><small>${d ? `${d.getMonth() + 1}月・${WD[d.getDay()]}` : ''}</small></span>
     <span class="info"><b>${esc(sesName(s))}</b><small>${esc([timeRange(s), s.title ? s.place : ''].filter(Boolean).join('・'))}</small>
-      <span class="chips-row"><span class="state s-${{ 進行中: 'on', 今天: 'on', 即將: 'soon', 已結束: 'end' }[st] || 'end'}">${st}</span><span class="state">${s.parts.length} 人參加</span>${joined ? `<span class="state mine">已加入${mine ? `・名單 ${mine}` : ''}</span>` : ''}</span></span>
+      <span class="chips-row">${sc ? `<span class="state cat">${sc.name}</span>` : ''}<span class="state s-${{ 進行中: 'on', 今天: 'on', 即將: 'soon', 已結束: 'end' }[st] || 'end'}">${st}</span><span class="state">${s.parts.length} 人參加</span>${joined ? `<span class="state mine">已加入${mine ? `・名單 ${mine}` : ''}</span>` : ''}</span></span>
     <span class="go" aria-hidden="true">›</span></button>`;
 }
 
@@ -120,11 +136,11 @@ function sesCard(s, me) {
 let TPLS = [];
 function sesTemplates() {
   const seen = new Set();
-  TPLS = sortSes(TEAM.sessions).filter(s => { const k = [s.title, s.place, s.start, s.end, s.items.join(), s.note].join('|'); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
+  TPLS = sortSes(TEAM.sessions).filter(s => { const k = [s.title, s.place, s.start, s.end, s.items.join(), s.note, s.color].join('|'); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
   if (!TPLS.length) return '';
   const th = themeOf(TEAM.team);
   return `<div class="templates"><h2>從建立過的時段帶入<small>點一下就填好，日期改成今天</small></h2>
-    <div class="tpl-row">${TPLS.map((t, i) => `<button class="tpl" type="button" data-tpl="${i}" aria-pressed="false" style="--tc:${th.btn}">
+    <div class="tpl-row">${TPLS.map((t, i) => `<button class="tpl" type="button" data-tpl="${i}" aria-pressed="false" style="--tc:${(sesColorOf(t) || {}).c || th.btn}">
       <b>${esc(sesName(t))}</b><small>${esc([timeRange(t), t.title ? t.place : ''].filter(Boolean).join('・') || '—')}</small><small>計數 ${t.items.length} 項${t.note ? '・有備註' : ''}</small><small class="saved">上次 ${esc(dayLabel(t.date))}・${esc(t.creator)}</small></button>`).join('')}</div></div>`;
 }
 /* ---------- 時間選擇：24 小時制或上午／下午（記住每個人的選擇） ---------- */
@@ -224,11 +240,13 @@ function sesFormFlow(s) {
       ${isNew ? `<div id="slots">${slotsHtml()}</div>` : `<label class="field"><span>日期</span><input type="date" name="date" required value="${esc(s.date)}"></label>
       <div class="row2"><div class="field"><span>開始</span>${timePick('name="start"', s.start)}</div><div class="field"><span>結束</span>${timePick('name="end"', s.end)}</div></div>`}
       <label class="field"><span>地點</span><input name="place" maxlength="80" value="${esc(s.place)}" placeholder="例如：一中街、中興大學、崇德路社區"></label>
+      ${colorPicker(s.color || '')}
       <div class="field"><span>這個時段要計數的項目</span><div class="checks">${ITEMS.map(x => `<label class="check"><input type="checkbox" name="items" value="${x.k}" ${s.items.includes(x.k) ? 'checked' : ''}><span>${x.label}</span></label>`).join('')}</div></div>
       <label class="field"><span>備註（選填）</span><textarea name="note" maxlength="300" placeholder="集合地點、分組、要帶的東西…">${esc(s.note)}</textarea></label>
       <button class="btn send" type="submit">${isNew ? '建立時段' : '儲存'}</button>
     </form></div>`);
   const f = $('ses-form');
+  $$('[data-scolor]').forEach(b => b.onclick = () => $$('[data-scolor]').forEach(x => x.setAttribute('aria-checked', x === b)));
   if (isNew) {
     // 改了日期、時間：更新預覽（不重畫輸入框，才不會打斷輸入）
     $('slots').addEventListener('change', e => { if (e.target.matches('[data-sl], #rep-until')) { readSlots(); drawSlots(); } });
@@ -236,6 +254,7 @@ function sesFormFlow(s) {
   $$('[data-tpl]').forEach(b => b.onclick = () => {
     const t = TPLS[+b.dataset.tpl];
     ['title', 'place', 'note'].forEach(k => { f.elements[k].value = t[k] || ''; });
+    $$('[data-scolor]').forEach(x => x.setAttribute('aria-checked', x.dataset.scolor === (t.color || '')));
     readSlots(); SLOTS.forEach(sl => { sl.start = t.start || ''; sl.end = t.end || ''; }); drawSlots();
     $$('#ses-form [name=items]').forEach(i => { i.checked = t.items.includes(i.value); });
     $$('[data-tpl]').forEach(x => x.setAttribute('aria-pressed', x === b));
@@ -248,7 +267,7 @@ function sesFormFlow(s) {
     if (!items.length) { toast('至少勾選一個計數項目'); return; }
     const removed = isNew ? [] : s.items.filter(k => !items.includes(k));
     if (removed.length && !await confirmBox({ title: `移除「${removed.map(k => ITEM[k].label).join('、')}」？`, text: '這個時段將不再記錄、統計這些項目。之後加回來，原本記的數字還在。', ok: '移除' })) return;
-    const base = { title: v('title'), place: v('place'), items, note: v('note') };
+    const base = { title: v('title'), place: v('place'), items, note: v('note'), color: (f.querySelector('[data-scolor][aria-checked="true"]') || { dataset: {} }).dataset.scolor || '' };
     let slots = [];
     if (isNew) {
       readSlots(); slots = expandSlots();
@@ -272,8 +291,9 @@ function sesFormFlow(s) {
 /* ================= 一個開展時段：我的計數＋記名卡片 ================= */
 function renderSession(s) {
   const me = TEAM.me.userId, part = partOf(s, me), st = sesState(s), editable = canEditSes(s);
-  const head = `<section class="panel ses-head" id="ses-head">
-    <div class="ph-row"><span class="state s-${{ 進行中: 'on', 今天: 'on', 即將: 'soon', 已結束: 'end' }[st] || 'end'}">${st}</span>${tools(`sesinfo:${s.id}`, 'ses-head', `${sesName(s)}-時段`)}</div>
+  const scol = sesColorOf(s);
+  const head = `<section class="panel ses-head ${scol ? 'colored' : ''}" id="ses-head" ${scol ? `style="--sc:${scol.c}"` : ''}>
+    <div class="ph-row">${scol ? `<span class="state cat">${scol.name}</span>` : ''}<span class="state s-${{ 進行中: 'on', 今天: 'on', 即將: 'soon', 已結束: 'end' }[st] || 'end'}">${st}</span>${tools(`sesinfo:${s.id}`, 'ses-head', `${sesName(s)}-時段`)}</div>
     <h2 class="ses-title">${esc(sesName(s))}</h2>
     <p class="ses-when">${esc(sesLabel(s))}</p>
     ${s.note ? `<p class="ses-note">${esc(s.note)}</p>` : ''}

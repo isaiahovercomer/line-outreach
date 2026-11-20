@@ -11,6 +11,7 @@ const ACTS = {
   openSes: b => { TAB = 'rec'; SUB = b.dataset.id; renderTeam(); },
   toSum: b => { flushCounts(); TAB = 'ses'; SUB = b.dataset.id; renderTeam(); },
   newSes: () => sesFormFlow(null),
+  sesFilter: b => { SES_FILTER = b.dataset.k; renderTeam(true); },
   openUrl: b => openUrl(b.dataset.url),
   copyGospel: () => copyText(`送你一個 1 分鐘的小故事：「人生的奧秘」——人為什麼被造？人生的意義在哪裡？\n${GOSPEL.share}`, '已複製，可以貼給對方'),
   timeMode: b => { TIME24 = b.dataset.v === '1'; try { localStorage.setItem(TIME_KEY, TIME24 ? '1' : '0'); } catch (e) {} redrawTimePicks(); },

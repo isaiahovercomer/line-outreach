@@ -347,3 +347,20 @@
   .friend-panel .btn-row { margin-top: 12px; }
   .friend-panel h2 { font-size: 18px; }
   .fr-steps { margin: 6px 0 12px; padding-left: 1.4em; font-size: 14px; line-height: 1.8; }
+
+  /* ---------- 時段分類色調 ---------- */
+  .scolors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .scolors button { display: flex; align-items: center; gap: 6px; border: 1.5px solid var(--rule); background: var(--paper); border-radius: 10px; padding: 8px 8px; font-size: 14px; color: var(--ink); cursor: pointer; }
+  .scolors i { width: 16px; height: 16px; border-radius: 50%; background: var(--sc); flex: none; }
+  .scolors button[aria-checked="true"] { border-color: var(--sc); box-shadow: 0 0 0 1.5px var(--sc); font-weight: 700; background: color-mix(in srgb, var(--sc) 8%, var(--paper)); }
+  .scolors button[data-scolor=""][aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink); }
+  .ses-card.colored { border-left: 6px solid var(--sc); padding-left: 10px; }
+  .ses-card.colored .date b { color: var(--sc); }
+  .state.cat { background: var(--sc); color: #fff; font-weight: 700; }
+  .ses-head.colored { border-top: 6px solid var(--sc); }
+  .ses-head.colored .ses-when { color: var(--sc); }
+  .ses-filter { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin: -2px -16px 4px; padding: 2px 16px 6px; }
+  .ses-filter .chip { flex: none; white-space: nowrap; padding: 5px 12px; font-size: 13px; }
+  .cchip i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--sc); margin-right: 5px; }
+  .cchip.on { background: var(--sc) !important; border-color: var(--sc) !important; color: #fff; }
+  .cchip.on i { background: #fff; }

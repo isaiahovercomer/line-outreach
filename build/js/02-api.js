@@ -11,12 +11,12 @@ const demo = (() => {
   ];
   const all = ITEMS.map(x => x.k);
   const sessions = [
-    { id: 'S1', title: '一中街掃街', date: '2026-11-07', start: '14:00', end: '16:30', place: '一中街', items: all, creatorId: 'U2', note: '' },
-    { id: 'S2', title: '大學校園', date: '2026-11-10', start: '18:30', end: '20:30', place: '中興大學', items: ['contact', 'tract', 'preach', 'call', 'valid'], creatorId: 'U1', note: '' },
-    { id: 'S3', title: '社區叩門', date: '2026-11-14', start: '09:30', end: '11:30', place: '北屯區崇德路社區', items: ['contact', 'visit', 'tract', 'preach', 'call', 'valid'], creatorId: 'U4', note: '兩人一組，帶福音單張與小冊' },
-    { id: 'S4', title: '公園福音', date: '2026-11-17', start: '19:00', end: '20:30', place: '文心森林公園', items: ['contact', 'tract', 'preach', 'call', 'valid'], creatorId: 'U2', note: '' },
-    { id: 'S5', title: '一中街掃街', date: '2026-11-20', start: '14:00', end: '17:00', place: '一中街', items: all, creatorId: 'U2', note: '' },
-    { id: 'S6', title: '週六社區叩門', date: '2026-11-21', start: '09:30', end: '11:30', place: '西屯區福科路社區', items: ['contact', 'visit', 'tract', 'preach', 'call', 'valid'], creatorId: 'U1', note: '' },
+    { id: 'S1', color: 'street', title: '一中街掃街', date: '2026-11-07', start: '14:00', end: '16:30', place: '一中街', items: all, creatorId: 'U2', note: '' },
+    { id: 'S2', color: 'campus', title: '大學校園', date: '2026-11-10', start: '18:30', end: '20:30', place: '中興大學', items: ['contact', 'tract', 'preach', 'call', 'valid'], creatorId: 'U1', note: '' },
+    { id: 'S3', color: 'door', title: '社區叩門', date: '2026-11-14', start: '09:30', end: '11:30', place: '北屯區崇德路社區', items: ['contact', 'visit', 'tract', 'preach', 'call', 'valid'], creatorId: 'U4', note: '兩人一組，帶福音單張與小冊' },
+    { id: 'S4', color: 'park', title: '公園福音', date: '2026-11-17', start: '19:00', end: '20:30', place: '文心森林公園', items: ['contact', 'tract', 'preach', 'call', 'valid'], creatorId: 'U2', note: '' },
+    { id: 'S5', color: 'street', title: '一中街掃街', date: '2026-11-20', start: '14:00', end: '17:00', place: '一中街', items: all, creatorId: 'U2', note: '' },
+    { id: 'S6', color: 'door', title: '週六社區叩門', date: '2026-11-21', start: '09:30', end: '11:30', place: '西屯區福科路社區', items: ['contact', 'visit', 'tract', 'preach', 'call', 'valid'], creatorId: 'U1', note: '' },
   ];
   let seed = 7; const rnd = n => { seed = (seed * 9301 + 49297) % 233280; return Math.floor(seed / 233280 * n); };
   const counts = [];
