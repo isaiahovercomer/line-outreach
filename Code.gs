@@ -83,8 +83,8 @@ function doPost(e) {
       case 'removeMember':  need(T(), 'manage'); removeMember(T(), req.userId); out = { ok: true, ...teamPayload(user, T()) }; break;
       case 'leaveTeam':     leaveTeam(T()); out = { ok: true }; break;
       // 開展時段
-      case 'createSession': need(T(), 'session'); out = { ok: true, sessionId: createSessionRow(T(), req.session || {}) }; break;
-      case 'updateSession': updateSession(T(), req.sessionId, req.session || {}); out = { ok: true }; break;
+      case 'createSession': need(T(), 'session'); out = { ok: true, sessionId: createSessionRow(T(), req.ses || {}) }; break;
+      case 'updateSession': updateSession(T(), req.sessionId, req.ses || {}); out = { ok: true }; break;
       case 'deleteSession': deleteSessionRow(T(), req.sessionId); out = { ok: true }; break;
       case 'joinSession':   joinSession(T(), req.sessionId); out = { ok: true }; break;
       case 'leaveSession':  leaveSession(T(), req.sessionId); out = { ok: true }; break;

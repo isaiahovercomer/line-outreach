@@ -887,8 +887,8 @@ async function demoApi(action, p) {
     case 'setMember': { const m = d.members.find(x => x.userId === p.userId); if (p.title != null) m.title = p.title; if (p.perms && m.perms !== 'owner') m.perms = DPERMSTR(p.perms); return { ok: true, ...demoTeam() }; }
     case 'removeMember': d.members = d.members.filter(x => x.userId !== p.userId); return { ok: true, ...demoTeam() };
     case 'leaveTeam': return { ok: true };
-    case 'createSession': { const id = 'S' + Date.now(); d.sessions.push({ ...p.session, id, creatorId: me }); d.counts.push({ sid: id, userId: me, counts: {} }); return { ok: true, sessionId: id }; }
-    case 'updateSession': Object.assign(S(p.sessionId), p.session); return { ok: true };
+    case 'createSession': { const id = 'S' + Date.now(); d.sessions.push({ ...p.ses, id, creatorId: me }); d.counts.push({ sid: id, userId: me, counts: {} }); return { ok: true, sessionId: id }; }
+    case 'updateSession': Object.assign(S(p.sessionId), p.ses); return { ok: true };
     case 'deleteSession': d.sessions = d.sessions.filter(x => x.id !== p.sessionId); d.cards = d.cards.filter(c => c.sessionId !== p.sessionId); return { ok: true };
     case 'joinSession': if (!d.counts.some(c => c.sid === p.sessionId && c.userId === me)) d.counts.push({ sid: p.sessionId, userId: me, counts: {} }); return { ok: true };
     case 'leaveSession': d.counts = d.counts.filter(c => !(c.sid === p.sessionId && c.userId === me)); return { ok: true };
@@ -1296,8 +1296,8 @@ function sesFormFlow(s) {
     const data = { title: v('title'), date: v('date'), start: v('start'), end: v('end'), place: v('place'), items, note: v('note') };
     const btn = f.querySelector('[type=submit]'); btn.disabled = true;
     try {
-      if (isNew) { const r = await api('createSession', { teamId: TEAM.team.id, session: data }); SUB = r.sessionId; toast('時段建立好了，可以邀請大家加入'); }
-      else { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, session: data }); toast('已儲存'); }
+      if (isNew) { const r = await api('createSession', { teamId: TEAM.team.id, ses: data }); SUB = r.sessionId; toast('時段建立好了，可以邀請大家加入'); }
+      else { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, ses: data }); toast('已儲存'); }
       TAB = 'rec'; await reloadTeam(false);
     } catch (err) { toast(err.message); btn.disabled = false; }
   };
@@ -1780,7 +1780,7 @@ const ACTS = {
 async function saveItems(s, items) {
   const old = s.items;
   s.items = items; renderTeam(true);
-  try { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, session: { ...s, items } }); toast('已更新計數項目'); }
+  try { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, ses: { ...s, items } }); toast('已更新計數項目'); }
   catch (e) { s.items = old; toast(e.message); renderTeam(true); }
 }
 /** 代禱牆上點名字：跳出那張記名卡片 */

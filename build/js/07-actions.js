@@ -103,7 +103,7 @@ const ACTS = {
 async function saveItems(s, items) {
   const old = s.items;
   s.items = items; renderTeam(true);
-  try { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, session: { ...s, items } }); toast('已更新計數項目'); }
+  try { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, ses: { ...s, items } }); toast('已更新計數項目'); }
   catch (e) { s.items = old; toast(e.message); renderTeam(true); }
 }
 /** 代禱牆上點名字：跳出那張記名卡片 */

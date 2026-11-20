@@ -128,8 +128,8 @@ function sesFormFlow(s) {
     const data = { title: v('title'), date: v('date'), start: v('start'), end: v('end'), place: v('place'), items, note: v('note') };
     const btn = f.querySelector('[type=submit]'); btn.disabled = true;
     try {
-      if (isNew) { const r = await api('createSession', { teamId: TEAM.team.id, session: data }); SUB = r.sessionId; toast('時段建立好了，可以邀請大家加入'); }
-      else { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, session: data }); toast('已儲存'); }
+      if (isNew) { const r = await api('createSession', { teamId: TEAM.team.id, ses: data }); SUB = r.sessionId; toast('時段建立好了，可以邀請大家加入'); }
+      else { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, ses: data }); toast('已儲存'); }
       TAB = 'rec'; await reloadTeam(false);
     } catch (err) { toast(err.message); btn.disabled = false; }
   };

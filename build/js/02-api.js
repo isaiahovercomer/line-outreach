@@ -89,8 +89,8 @@ async function demoApi(action, p) {
     case 'setMember': { const m = d.members.find(x => x.userId === p.userId); if (p.title != null) m.title = p.title; if (p.perms && m.perms !== 'owner') m.perms = DPERMSTR(p.perms); return { ok: true, ...demoTeam() }; }
     case 'removeMember': d.members = d.members.filter(x => x.userId !== p.userId); return { ok: true, ...demoTeam() };
     case 'leaveTeam': return { ok: true };
-    case 'createSession': { const id = 'S' + Date.now(); d.sessions.push({ ...p.session, id, creatorId: me }); d.counts.push({ sid: id, userId: me, counts: {} }); return { ok: true, sessionId: id }; }
-    case 'updateSession': Object.assign(S(p.sessionId), p.session); return { ok: true };
+    case 'createSession': { const id = 'S' + Date.now(); d.sessions.push({ ...p.ses, id, creatorId: me }); d.counts.push({ sid: id, userId: me, counts: {} }); return { ok: true, sessionId: id }; }
+    case 'updateSession': Object.assign(S(p.sessionId), p.ses); return { ok: true };
     case 'deleteSession': d.sessions = d.sessions.filter(x => x.id !== p.sessionId); d.cards = d.cards.filter(c => c.sessionId !== p.sessionId); return { ok: true };
     case 'joinSession': if (!d.counts.some(c => c.sid === p.sessionId && c.userId === me)) d.counts.push({ sid: p.sessionId, userId: me, counts: {} }); return { ok: true };
     case 'leaveSession': d.counts = d.counts.filter(c => !(c.sid === p.sessionId && c.userId === me)); return { ok: true };
