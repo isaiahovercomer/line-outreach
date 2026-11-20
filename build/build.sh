@@ -17,7 +17,7 @@ cat <<'H'
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="開展隊">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>LINE 開展隊紀錄與彙整建立平台</title>
+<title>開展隊記錄彙整代禱平台</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
