@@ -32,7 +32,7 @@ function fatal(e) {
     <button class="btn plain" style="margin-top:16px" onclick="location.href=location.pathname${DEMO ? "+'?demo'" : ''}">回到首頁</button></section>`);
 }
 
-const brandHeader = () => `<header class="top"><div class="brand"><img class="logo" src="img/logo.svg" alt="" width="34" height="44"><h1>開展隊記錄彙整代禱平台</h1></div><button class="help" id="help" type="button" aria-label="使用教學" data-act="tour">?</button></header>
+const brandHeader = () => `<header class="top"><a class="brand home-link" href="${location.pathname}${DEMO ? "?demo" : ""}" data-act="home" aria-label="回到首頁"><img class="logo" src="img/logo.svg" alt="" width="34" height="44"><h1>開展隊記錄彙整代禱平台</h1></a><button class="help" id="help" type="button" aria-label="使用教學" data-act="tour">?</button></header>
   ${DEMO ? `<p class="demo-note">預覽模式：目前使用範例資料。</p>` : ''}`;
 const subbar = (label, title, act = 'home') => `<div class="subbar"><button class="back" type="button" data-act="${act}">‹ ${esc(label)}</button>${title ? `<h1>${esc(title)}</h1>` : '<span></span>'}</div>`;
 

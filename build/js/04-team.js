@@ -73,7 +73,7 @@ function renderTeam(keepScroll) {
   const myTitle = (TEAM.members.find(m => m.userId === me.userId) || {}).title || '';
   const body = { rec: renderRec, ses: renderSesSum, all: renderAll, pray: renderPray, mem: renderMembers }[TAB]();
   view(`<div class="team-wrap" style="${themeVars(th)}">
-    <header class="team-top"><button class="back light" type="button" data-act="home">‹ 我的開展隊</button>
+    <header class="team-top"><a class="back light home-link plat" href="${location.pathname}${DEMO ? '?demo' : ''}" data-act="home" aria-label="回到首頁">‹ <img src="img/logo.svg" alt="" width="12" height="16"> 開展隊記錄彙整代禱平台</a>
       <div class="tt-row">${teamIcon(t, 'tt-img')}<div><h1>${esc(t.title)}</h1><p>${esc(periodLabel(t.start, t.end))}${t.start || t.end ? '・' : ''}${esc(me.name)}${myTitle ? `（${esc(myTitle)}）` : ''}</p></div></div>
       <button class="help" type="button" data-act="tour" aria-label="使用教學">?</button></header>
     ${DEMO ? `<p class="demo-note">預覽模式：目前使用範例資料。</p>` : ''}

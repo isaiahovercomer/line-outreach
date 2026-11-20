@@ -306,3 +306,7 @@
   .join-img { width: 76px; height: 76px; border-radius: 18px; object-fit: cover; display: block; margin-bottom: 12px; }
   header.top h1 { font-size: 21px; letter-spacing: .03em; line-height: 1.3; }
   header.top .logo { width: 32px; height: 42px; }
+  .home-link { text-decoration: none; color: inherit; cursor: pointer; border-radius: 10px; -webkit-tap-highlight-color: transparent; }
+  .home-link:active { opacity: .75; }
+  .team-top .plat { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
+  .team-top .plat img { width: 12px; height: 16px; }
