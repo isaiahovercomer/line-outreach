@@ -63,11 +63,14 @@ function setup() {
 
 function doGet() { return json({ ok: true, msg: 'LINE 開展隊紀錄與彙整建立平台運作中' }); }
 
+let reqDebug = false;
 function doPost(e) {
   let out;
   try {
     const req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    reqDebug = !!req.debug; PERF.log.push('start:' + (Date.now() - PERF.t0));
     const user = req.session && req.action !== 'session' ? userFromSession(req.session) : verifyIdToken(req.idToken);
+    PERF.log.push('auth:' + (Date.now() - PERF.t0));
     const T = () => requireMember(user, req.teamId);
     switch (req.action) {
       case 'session':       out = { ok: true, ...createSession(user) }; break;
@@ -110,6 +113,7 @@ function doPost(e) {
   } catch (err) {
     out = { ok: false, error: String((err && err.message) || err) };
   }
+  if (out && reqDebug) out._perf = { ms: Date.now() - PERF.t0, log: PERF.log };
   return json(out);
 }
 
@@ -221,11 +225,13 @@ function bumpVersions(names) {
   VERS = v; CMETA = null;
 }
 /** 同一次請求裡每張表只讀一次；不在鎖裡時先看快取 */
+const PERF = { t0: Date.now(), log: [] };
 function data(name) {
   if (MEMO[name]) return MEMO[name];
-  const useCache = !IN_LOCK && CACHED_TABLES.indexOf(name) >= 0;
-  if (useCache) { const c = cacheGet(name); if (c) return (MEMO[name] = c); }
+  const useCache = !IN_LOCK && CACHED_TABLES.indexOf(name) >= 0, t = Date.now();
+  if (useCache) { const c = cacheGet(name); if (c) { PERF.log.push(name + ':hit:' + (Date.now() - t)); return (MEMO[name] = c); } }
   const v = rawSheet(name).getDataRange().getValues();
+  PERF.log.push(name + ':read:' + (Date.now() - t) + (useCache ? '' : ':lock'));
   if (useCache) cachePut(name, v);
   return (MEMO[name] = v);
 }
