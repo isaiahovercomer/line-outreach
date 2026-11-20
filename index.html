@@ -1,0 +1,1926 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#22483A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="開展隊">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>LINE 開展隊紀錄與彙整建立平台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="preload" as="script" href="https://static.line-scdn.net/liff/edge/2/sdk.js">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link rel="preconnect" href="https://api.line.me">
+<style>
+  :root {
+    /* 平台配色：福音綠＋米白紙＋金（沿用 IN CHRIST 的米白與金，主色改為開展的綠） */
+    --sky: #F7F4EC;        /* 頁面底色（暖米白） */
+    --sky-2: #ECE7DA;      /* 次要底色 */
+    --paper: #FFFDF8;      /* 卡片紙 */
+    --ink: #22302A;        /* 主要文字（深墨綠） */
+    --ink-2: #66675F;      /* 次要文字 */
+    --rule: #E2DCCB;       /* 分隔、邊框 */
+    --marigold: #C49356;   /* 金色點綴 */
+    --gold-text: #8A6431;  /* 米白底上的金色文字 */
+    --gold-soft: rgba(196, 147, 86, .16);
+    --line: #2C5B47;       /* 主要動作按鈕（福音綠） */
+    --line-dark: #1C3F31;
+    --chrome: #22483A;     /* 頁首橫幅 */
+    --chrome-fg: #F7F1E4;
+    --chrome-muted: #C3CBBF;
+    --stamp: #B03A2E;      /* 迫切、刪除（磚紅） */
+    --shadow: 0 1px 2px rgba(40, 50, 30, .05), 0 8px 24px rgba(40, 50, 30, .08);
+    --serif: "Noto Serif TC", "Songti TC", serif;
+    --sans: -apple-system, "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--sky); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; -webkit-text-size-adjust: 100%; }
+  button, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  #app { max-width: 480px; margin: 0 auto; padding: 0 16px calc(120px + env(safe-area-inset-bottom)); }
+
+  /* ---------- 頂部 ---------- */
+  header.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 -16px; padding: calc(22px + env(safe-area-inset-top)) 16px 18px; background: var(--chrome); color: var(--chrome-fg); border-bottom: 3px solid var(--marigold); }
+  header.top .brand { display: flex; align-items: center; gap: 12px; }
+  header.top .logo { width: 44px; height: 44px; flex: none; }
+  header.top h1 { font-family: var(--serif); font-weight: 900; font-size: 24px; letter-spacing: .06em; margin: 0; color: var(--chrome-fg); }
+  header.top .who { color: var(--chrome-muted); font-size: 14px; white-space: nowrap; }
+  .demo-note { background: var(--gold-soft); color: var(--gold-text); font-size: 13px; padding: 8px 12px; border-radius: 8px; margin: 8px 0 4px; }
+
+  .tabs { display: flex; gap: 22px; border-bottom: 2px solid var(--rule); margin: 14px 0 20px; }
+  .tabs button { background: none; border: 0; padding: 10px 0; font-size: 16px; font-weight: 500; color: var(--ink-2); border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--marigold); font-weight: 700; }
+  .tabs .n { font-size: 13px; color: var(--ink-2); margin-left: 4px; }
+
+  .subbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 14px; }
+  .back { background: none; border: 0; padding: 6px 0; font-size: 16px; color: var(--ink-2); cursor: pointer; }
+  .subbar h1 { font-size: 17px; margin: 0; }
+
+  /* ---------- 票券（圖卡預覽） ---------- */
+  .ticket { position: relative; background: var(--paper); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); border-top: 6px solid var(--line); } /* 上方色帶＝活動色調 */
+  .ticket .hero { width: 100%; aspect-ratio: 20 / 13; object-fit: cover; display: block; background: var(--rule); }
+  .ticket .main { padding: 20px 22px 18px; }
+  .ticket .title { font-family: var(--serif); font-weight: 900; font-size: 24px; line-height: 1.35; margin: 0 0 12px; word-break: break-word; }
+  .ticket .title.empty { color: var(--rule); }
+  .ticket dl { display: grid; grid-template-columns: 3em 1fr; gap: 4px 10px; margin: 0; font-size: 15px; }
+  .ticket dt { color: var(--ink-2); }
+  .ticket dd { margin: 0; word-break: break-word; }
+  .ticket .desc { color: var(--ink-2); font-size: 14px; margin: 12px 0 0; white-space: pre-wrap; word-break: break-word; }
+  .ticket .perf { position: relative; height: 0; border-top: 2px dashed var(--rule); margin: 0 18px; }
+  .ticket .perf::before, .ticket .perf::after { content: ""; position: absolute; top: -13px; width: 24px; height: 24px; border-radius: 50%; background: var(--sky); }
+  .ticket .perf::before { left: -31px; }
+  .ticket .perf::after { right: -31px; }
+  .ticket .stub { padding: 16px 22px 20px; display: flex; align-items: center; gap: 14px; }
+  .ticket .stub .notch { width: 8px; align-self: stretch; background: var(--marigold); border-radius: 4px; }
+  .ticket .stub .fake-btn { flex: 1; background: var(--line); color: var(--chrome-fg); text-align: center; font-weight: 700; padding: 11px; border-radius: 10px; }
+  .ticket .tally { display: flex; align-items: baseline; gap: 6px; }
+  .ticket .tally b { font-family: var(--serif); font-size: 34px; line-height: 1; }
+  .ticket .tally span { color: var(--ink-2); font-size: 14px; }
+  .ticket .tally .state { margin-left: auto; }
+
+  .pv-panel { --sky: var(--sky-2); background: var(--sky-2); border: 1.5px dashed var(--marigold); border-radius: 20px; padding: 12px 14px 18px; }
+  .pv-label { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 12px; flex-wrap: wrap; }
+  .pv-label .tag { background: var(--marigold); color: var(--paper); font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 999px; letter-spacing: .06em; }
+  .pv-label small { color: var(--ink-2); font-size: 13px; }
+  .form-title { font-family: var(--serif); font-weight: 900; font-size: 20px; margin: 30px 0 14px; padding-bottom: 8px; border-bottom: 1.5px solid var(--rule); }
+  .caption { color: var(--ink-2); font-size: 13px; text-align: center; margin: 10px 0 26px; }
+
+  /* ---------- 表單 ---------- */
+  .group { margin: 0 0 22px; }
+  .group h2 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
+  .field { display: block; margin-bottom: 10px; }
+  .field > span { display: block; font-size: 14px; color: var(--ink-2); margin-bottom: 4px; }
+  .field input, .field textarea { width: 100%; background: var(--paper); border: 1.5px solid var(--rule); border-radius: 12px; padding: 12px 14px; font-size: 16px; min-height: 50px; }
+  .field textarea { min-height: 96px; resize: vertical; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--ink); }
+  .field .help { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row2 > .field { min-width: 0; }
+
+  .img-pick { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .img-pick .btn.small { margin: 0; }
+  .q-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .q-row input { flex: 1; min-width: 0; background: var(--paper); border: 1.5px solid var(--rule); border-radius: 12px; padding: 11px 14px; font-size: 16px; }
+  .q-row input:focus { outline: none; border-color: var(--ink); }
+  .q-del { width: 46px; flex: none; border: 1.5px solid var(--rule); background: var(--paper); border-radius: 12px; font-size: 20px; color: var(--ink-2); cursor: pointer; }
+  .q-card { background: var(--paper); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+  .q-card .q-row { margin-bottom: 8px; }
+  .q-card .q-row input { background: var(--sky-2); border-color: transparent; }
+  .q-type { display: inline-flex; border: 1.5px solid var(--rule); border-radius: 10px; overflow: hidden; }
+  .q-type button { border: 0; background: transparent; padding: 6px 14px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+  .q-type button[aria-pressed="true"] { background: var(--ink); color: #fff; font-weight: 700; }
+  .q-opts { width: 100%; margin-top: 8px; background: var(--paper); border: 1.5px solid var(--rule); border-radius: 12px; padding: 11px 14px; font-size: 16px; }
+  .q-opts:focus { outline: none; border-color: var(--ink); }
+  .field select { width: 100%; background: var(--paper); border: 1.5px solid var(--rule); border-radius: 12px; padding: 12px 14px; font-size: 16px; min-height: 50px; color: var(--ink); appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; }
+  .stat-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .stat-head .btn.small { margin: 0; flex: none; }
+  .empty-note { border-top: 1px solid var(--sky); padding-top: 10px; margin-top: 4px; }
+  .group-block { border-top: 1px solid var(--sky); padding: 12px 0 6px; }
+  .group-block:first-of-type { margin-top: 8px; }
+  .group-block .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .group-block .lbl { font-weight: 700; font-size: 16px; }
+  .group-block .cnt { color: var(--ink-2); font-size: 13px; }
+  .group-block.none .lbl { color: var(--ink-2); }
+  .group-block.none .bar i { background: var(--rule); }
+  .names { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5em, 1fr)); gap: 6px; }
+  .stat .names li { background: var(--sky-2); border: 0; border-radius: 8px; padding: 5px 10px; font-size: 14px; word-break: break-word; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 1.5px dashed var(--ink-2); background: transparent; border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--ink); cursor: pointer; }
+  .chip.new { border-style: solid; border-color: var(--ink); font-weight: 700; }
+
+  /* ---------- 底部固定按鈕 ---------- */
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--sky) 70%, rgba(250,246,238,0)); z-index: 5; }
+  .dock .inner { max-width: 480px; margin: 0 auto; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 15px; font-size: 17px; font-weight: 700; cursor: pointer; }
+  .btn.send { background: var(--line); color: var(--chrome-fg); box-shadow: 0 6px 16px -8px var(--line-dark); }
+  .btn.send:active { background: var(--line-dark); }
+  .btn.ink { background: var(--ink); color: var(--chrome-fg); }
+  .btn.plain { background: var(--paper); color: var(--ink); border: 1.5px solid var(--rule); }
+  .btn.cancel { background: transparent; color: var(--stamp); border: 1.5px solid rgba(176, 58, 46, .35); }
+  .btn.cancel.armed { background: var(--stamp); color: #fff; border-color: var(--stamp); }
+  .btn.small { display: inline-block; width: auto; padding: 8px 14px; font-size: 14px; border-radius: 10px; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
+  /* ---------- 狀態標籤 ---------- */
+  .state { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 6px; background: var(--gold-soft); color: var(--gold-text); white-space: nowrap; }
+  .state.full { background: rgba(176, 58, 46, .10); color: var(--stamp); }
+  .state.ended, .state.closed { background: var(--sky-2); color: var(--ink-2); }
+
+  /* ---------- 已發布列表 ---------- */
+  .stubs { display: grid; gap: 12px; }
+  .templates { margin: 0 0 20px; }
+  .templates h2 { font-size: 15px; margin: 0 0 10px; }
+  .tpl-row { display: flex; gap: 12px; overflow-x: auto; padding: 8px 2px 8px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; scroll-snap-type: x mandatory; }
+  .tpl { flex: none; width: 150px; text-align: left; background: var(--paper); border: 1.5px solid var(--rule); border-left: 6px solid var(--tc); border-radius: 12px; padding: 10px 12px; cursor: pointer; scroll-snap-align: start; }
+  .tpl b { display: block; font-size: 15px; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .tpl small { display: block; color: var(--ink-2); font-size: 12px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tpl:active { border-color: var(--ink); }
+  .templates .help { margin: 4px 0 0; font-size: 12px; color: var(--ink-2); }
+  .tone-pick { margin-top: 16px; padding-top: 14px; border-top: 1.5px dashed var(--marigold); }
+  .tone-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .tone-head h3 { margin: 0; font-size: 15px; }
+  .tone-head .btn.small { margin: 0; }
+  .tones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .tones button { border: 1.5px solid var(--rule); background: var(--paper); border-radius: 12px; padding: 9px 2px 7px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 13px; color: var(--ink); cursor: pointer; }
+  .tones i { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--sw) 0 58%, var(--sw2) 58%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.7); }
+  .tones button[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink); font-weight: 700; }
+  .cleanup { display: flex; gap: 12px; align-items: center; justify-content: space-between; background: var(--gold-soft); border: 1.5px solid var(--marigold); border-radius: 14px; padding: 12px 14px; margin: -4px 0 16px; }
+  .cleanup p { margin: 0; font-size: 14px; line-height: 1.5; }
+  .cleanup p span { color: var(--ink-2); font-size: 13px; }
+  .cleanup .btn.small { margin: 0; flex: none; }
+  .stub-card.past { filter: grayscale(1); opacity: .62; background: var(--sky-2); }
+  .stub-card.past[aria-checked="true"] { opacity: .9; }
+  .state.over { background: var(--ink-2); color: var(--paper); }
+  .tpl-wrap { position: relative; flex: none; scroll-snap-align: start; }
+  .tpl small.saved { color: var(--gold-text); }
+  .tpl-x { position: absolute; top: -6px; right: -6px; min-width: 24px; height: 24px; border-radius: 12px; border: 1.5px solid var(--rule); background: var(--paper); color: var(--ink-2); font-size: 14px; line-height: 1; padding: 0 6px; cursor: pointer; }
+  .tpl-x.armed { background: var(--stamp); color: #fff; border-color: var(--stamp); }
+  .list-head { display: flex; justify-content: space-between; align-items: center; margin: -6px 0 12px; color: var(--ink-2); font-size: 14px; }
+  .list-acts { display: flex; gap: 8px; }
+  .list-acts .btn.small { margin: 0; }
+  .stubs.selecting .stub-card .info { position: relative; padding-left: 50px; }
+  .stub-card .check { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--rule); background: var(--paper); }
+  .stub-card[aria-checked="true"] { box-shadow: 0 0 0 2px var(--stamp); }
+  .stub-card[aria-checked="true"] .check { background: var(--stamp); border-color: var(--stamp); }
+  .stub-card[aria-checked="true"] .check::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+  .btn.danger-fill { background: var(--stamp); color: #fff; }
+  .btn.danger-fill.armed { background: #8E2A20; }
+  .btn.danger-fill:disabled { background: var(--rule); color: var(--ink-2); opacity: 1; }
+  .stub-card { background: var(--paper); border-radius: 14px; display: grid; grid-template-columns: 1fr auto; overflow: hidden; border: 0; padding: 0; text-align: left; width: 100%; cursor: pointer; }
+  .stub-card .info { padding: 14px 16px; min-width: 0; }
+  .stub-card .t { font-family: var(--serif); font-weight: 900; font-size: 17px; line-height: 1.4; word-break: break-word; }
+  .stub-card .d { color: var(--ink-2); font-size: 13px; margin: 2px 0 6px; }
+  .stub-card .count { border-left: 2px dashed var(--rule); padding: 14px 16px; text-align: center; display: flex; flex-direction: column; justify-content: center; min-width: 84px; }
+  .stub-card .count b { font-family: var(--serif); font-size: 30px; line-height: 1; }
+  .stub-card .count small { color: var(--ink-2); font-size: 12px; margin-top: 4px; }
+  .empty { text-align: center; color: var(--ink-2); padding: 40px 10px; }
+  .empty .btn { margin-top: 14px; }
+
+  /* ---------- 活動詳情 ---------- */
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 6px; }
+  .fact { background: var(--paper); border-radius: 12px; padding: 10px 14px; }
+  .fact small { display: block; color: var(--ink-2); font-size: 12px; }
+  .fact span { font-weight: 700; }
+  .roll-head { display: flex; justify-content: space-between; align-items: center; margin: 26px 0 8px; }
+  .roll-head h2 { font-size: 17px; margin: 0; }
+  .roll { list-style: none; margin: 0; padding: 0; background: var(--paper); border-radius: 14px; overflow: hidden; counter-reset: roll; }
+  .roll li { display: grid; grid-template-columns: 2em 1fr auto; gap: 8px; align-items: baseline; padding: 11px 16px; border-top: 1px solid var(--sky); counter-increment: roll; }
+  .roll li:first-child { border-top: 0; }
+  .roll li::before { content: counter(roll); font-family: var(--serif); font-weight: 900; color: var(--ink-2); }
+  .roll .nm { font-weight: 500; min-width: 0; word-break: break-word; }
+  .roll .nm small { display: block; color: var(--ink-2); font-size: 12px; font-weight: 400; }
+  .roll time { color: var(--ink-2); font-size: 13px; }
+  .roll .nm small.ans { color: var(--ink); font-size: 14px; margin-top: 2px; }
+  .stats { display: grid; gap: 12px; }
+  .stat { background: var(--paper); border-radius: 14px; padding: 14px 16px; }
+  .stat h3 { font-size: 16px; margin: 0; }
+  .stat .meta { color: var(--ink-2); font-size: 13px; margin: 2px 0 0; }
+  .stat .sum { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 0; }
+  .stat .sum b { font-family: var(--serif); font-size: 34px; line-height: 1; }
+  .stat .sum span { color: var(--ink-2); font-size: 14px; }
+  .stat ul { list-style: none; margin: 10px 0 0; padding: 0; }
+  .stat li { padding: 9px 0; border-top: 1px solid var(--sky); }
+  .stat li:first-child { border-top: 0; }
+  .stat li .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .stat .lbl { font-weight: 700; word-break: break-word; }
+  .stat .cnt { color: var(--ink-2); font-size: 13px; white-space: nowrap; }
+  .stat .cnt.dup { color: var(--stamp); font-weight: 700; }
+  .stat .bar { height: 8px; background: var(--sky-2); border-radius: 4px; margin: 6px 0 4px; overflow: hidden; }
+  .stat .bar i { display: block; height: 100%; background: var(--marigold); border-radius: 4px; }
+  .stat .who { color: var(--ink-2); font-size: 13px; word-break: break-word; }
+  .chart { display: flex; align-items: flex-end; gap: 6px; height: 150px; margin-top: 12px; overflow-x: auto; }
+  .chart .col { flex: 1; min-width: 28px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  .chart .track { flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-height: 0; }
+  .chart .col i { width: 100%; max-width: 36px; background: var(--marigold); border-radius: 6px 6px 2px 2px; }
+  .chart .n { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+  .chart .d { font-size: 11px; color: var(--ink-2); margin-top: 5px; white-space: nowrap; }
+
+  /* ---------- 成員 ---------- */
+  .add-member { background: var(--paper); border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+  .add-member h2 { font-size: 15px; margin: 0 0 10px; }
+  .add-member .btn { margin-top: 4px; }
+  .summary { color: var(--ink-2); font-size: 14px; margin: 0 0 10px; }
+  .search { width: 100%; background: var(--paper); border: 1.5px solid var(--rule); border-radius: 12px; padding: 11px 14px; font-size: 16px; margin-bottom: 12px; }
+  .members { list-style: none; margin: 0; padding: 0; background: var(--paper); border-radius: 14px; overflow: hidden; }
+  .members li { padding: 12px 16px; border-top: 1px solid var(--sky); }
+  .members li:first-child { border-top: 0; }
+  .members .line1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .members .nm { font-weight: 700; }
+  .members .ph { color: var(--ink-2); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .members .line2 { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; font-size: 13px; color: var(--ink-2); }
+  .members .acts { display: flex; gap: 6px; }
+  .members .acts button { background: none; border: 1px solid var(--rule); border-radius: 8px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+  .members .acts button.danger { color: var(--stamp); border-color: rgba(176, 58, 46, .35); }
+  .members .acts button.armed { background: var(--stamp); color: #fff; border-color: var(--stamp); }
+  .bound { color: var(--gold-text); font-weight: 500; }
+
+  /* ---------- 成員登記畫面 ---------- */
+  .solo { padding-top: 40px; }
+  .solo .ticket { overflow: visible; }
+  .solo .ticket .main { padding-top: 26px; }
+  .result-msg { padding: 18px 22px 22px; }
+  .result-msg p { margin: 0; }
+  .result-msg .muted { color: var(--ink-2); font-size: 14px; margin-top: 4px; }
+  .stamp { position: absolute; right: 18px; top: 18px; width: 96px; height: 96px; border: 4px solid var(--stamp); border-radius: 50%; color: var(--stamp); display: grid; place-items: center; font-family: var(--serif); font-weight: 900; font-size: 22px; letter-spacing: .08em; transform: rotate(-14deg); opacity: .9; background: rgba(255,253,248,.7); }
+  .stamp::before { content: ""; position: absolute; inset: 5px; border: 1.5px solid var(--stamp); border-radius: 50%; }
+  .stamp.ink { border-color: var(--ink-2); color: var(--ink-2); }
+  .stamp.ink::before { border-color: var(--ink-2); }
+  .stamp.land { animation: land .42s cubic-bezier(.2,1.4,.4,1) both; }
+  @keyframes land { from { transform: rotate(-14deg) scale(2.2); opacity: 0; } to { transform: rotate(-14deg) scale(1); opacity: .9; } }
+  .solo .ticket .title { padding-right: 100px; }
+  .install { text-align: center; padding-top: 56px; }
+  .install .app-icon { border-radius: 22px; box-shadow: var(--shadow); }
+  .install h1 { font-family: var(--serif); font-weight: 900; font-size: 26px; margin: 14px 0 4px; }
+  .install .btn { margin-top: 18px; }
+  .install-steps { text-align: left; background: var(--paper); border-radius: 14px; padding: 14px 18px 14px 38px; margin: 18px 0 0; line-height: 1.9; box-shadow: var(--shadow); }
+  .install .small { font-size: 13px; margin-top: 14px; }
+  .page-foot { display: flex; justify-content: center; gap: 18px; }
+  .page-foot .mydata-link { display: inline-block; }
+  .mydata-link { display: block; text-align: center; margin: 22px auto 0; font-size: 13px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  .page-foot { padding: 10px 0 0; }
+  dl.mydata { display: grid; grid-template-columns: 3.5em 1fr; gap: 6px 10px; margin: 0; }
+  dl.mydata dt { color: var(--ink-2); }
+  dl.mydata dd { margin: 0; word-break: break-all; }
+  .mydata-list { list-style: none; margin: 6px 0 0; padding: 0; }
+  .mydata-list li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--rule); font-size: 14px; }
+  .mydata-list time { color: var(--ink-2); white-space: nowrap; }
+  .stamp + .main dl { margin-right: 96px; } /* 沒有圖片時，印章會落在內文上 */
+  .warn { background: #FBECEC; color: #8E1F27; font-size: 14px; padding: 10px 12px; border-radius: 10px; margin: 0 0 12px; }
+  .posted { margin-top: 10px; font-size: 13px; color: var(--gold-text); }
+
+  .loading { text-align: center; color: var(--ink-2); padding: 80px 0; }
+  .loading .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--marigold); margin: 0 4px; animation: blink 1s infinite; }
+  .loading .dot:nth-child(2) { animation-delay: .15s; } .loading .dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes blink { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+
+  code.uid { display: block; word-break: break-all; background: var(--sky); padding: 10px 12px; border-radius: 10px; font-size: 13px; margin: 12px 0; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: var(--ink); color: var(--chrome-fg); padding: 11px 18px; border-radius: 12px; font-size: 15px; max-width: calc(100% - 32px); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 10; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- 頁首的教學按鈕 ---------- */
+  header.top { align-items: center; }
+  header.top .help { width: 34px; height: 34px; flex: none; border-radius: 50%; border: 1.5px solid var(--marigold); background: transparent; color: var(--marigold); font-family: var(--serif); font-weight: 900; font-size: 18px; cursor: pointer; }
+
+  /* ---------- 使用教學：變暗＋金框圈出功能＋說明泡泡（樣式取自聖經網站） ---------- */
+  .tour { position: fixed; inset: 0; z-index: 1000; opacity: 0; transition: opacity .22s; }
+  .tour.on { opacity: 1; }
+  .tour-catch { position: absolute; inset: 0; touch-action: none; }
+  .tour-hole { position: absolute; left: 0; top: 0; border-radius: 14px; pointer-events: none;
+    box-shadow: 0 0 0 2px var(--chrome), 0 0 0 5px var(--marigold), 0 0 0 200vmax rgba(16, 18, 28, .72);
+    transition: transform .32s cubic-bezier(.2,.8,.2,1), width .32s cubic-bezier(.2,.8,.2,1), height .32s cubic-bezier(.2,.8,.2,1); }
+  .tour-bubble { position: absolute; left: 0; top: 0; width: min(320px, calc(100vw - 24px)); background: var(--chrome); color: var(--chrome-fg);
+    border: 1px solid var(--marigold); border-radius: 16px; padding: 14px 16px 12px; box-shadow: 0 12px 36px rgba(0,0,0,.35); font-size: 15px; line-height: 1.6;
+    transition: transform .32s cubic-bezier(.2,.8,.2,1); }
+  .tour-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .tour-head h2 { margin: 0; font: 900 17px/1.4 var(--serif); color: #D9A466; letter-spacing: .04em; }
+  .tour-count { flex: none; font-size: 12px; font-weight: 700; color: var(--chrome-muted); font-variant-numeric: tabular-nums; }
+  .tour-bubble p { margin: 6px 0 12px; }
+  .tour-btns { display: flex; align-items: center; gap: 6px; }
+  .tour-btns button { min-height: 40px; padding: 0 12px; border: 0; border-radius: 99px; background: transparent; font-size: 15px; color: var(--chrome-fg); cursor: pointer; }
+  .tour-btns .tour-skip { color: var(--chrome-muted); padding-left: 4px; margin-right: auto; }
+  .tour-btns .tour-next { background: var(--marigold); color: var(--chrome); font-weight: 700; padding: 0 18px; }
+  .tour-btns button:disabled { opacity: .4; cursor: default; }
+  .tour-btns button:focus-visible { outline: 2px solid var(--chrome-fg); outline-offset: 2px; }
+
+  /* ---------- 新功能提示 ---------- */
+  .notice { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 20; width: min(440px, calc(100% - 24px));
+    display: flex; align-items: center; gap: 8px; background: var(--chrome); color: var(--chrome-fg); border: 1px solid var(--marigold); border-radius: 14px; padding: 10px 8px 10px 14px; box-shadow: 0 10px 28px rgba(0,0,0,.25); font-size: 14px; }
+  .notice span { flex: 1; }
+  .notice #notice-go { border: 0; background: var(--marigold); color: var(--chrome); font-weight: 700; border-radius: 99px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+  .notice #notice-x { border: 0; background: transparent; color: var(--chrome-muted); font-size: 20px; width: 32px; cursor: pointer; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tour, .tour-hole, .tour-bubble { transition: none; }
+    .stamp.land, .loading .dot { animation: none; }
+    .toast { transition: none; }
+  }
+
+  /* ================= 開展隊平台的樣式 ================= */
+  .muted { color: var(--ink-2); }
+  .small { font-size: 13px; }
+  select.inp, .inp { width: 100%; background: var(--paper); border: 1.5px solid var(--rule); border-radius: 12px; padding: 11px 14px; font-size: 16px; min-height: 48px; color: var(--ink); font-family: var(--sans); }
+  .inp:focus { outline: none; border-color: var(--ink); }
+  select.inp { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 36px; }
+  .btn svg { vertical-align: -4px; margin-right: 2px; }
+  .btn.small svg { width: 16px; height: 16px; vertical-align: -3px; }
+  .panel { background: var(--paper); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .panel h2 { font-size: 17px; margin: 0 0 6px; }
+  .sec-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin: 18px 0 10px; }
+  .panel .sec-h:first-child, .pray-wall .sec-h:first-child { margin-top: 0; }
+  .sec-h h2 { font-size: 17px; margin: 0; display: flex; align-items: baseline; gap: 6px; }
+  .sec-h .btn.small { margin: 0; flex: none; }
+  .sec-h p { margin: 2px 0 0; }
+  .n { font-size: 13px; font-weight: 700; color: var(--ink-2); background: var(--sky-2); border-radius: 99px; padding: 0 8px; margin-left: 6px; }
+  .hello { margin: 16px 0 14px; color: var(--ink-2); }
+  .kicker { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--line); letter-spacing: .04em; }
+  .link-btn { background: none; border: 0; padding: 4px 6px; font-size: 14px; color: var(--line); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .link-btn.danger { color: var(--stamp); }
+  .leave { text-align: center; font-size: 13px; margin: 18px 0; }
+  .leave a { color: var(--ink-2); }
+  .empty p { margin: 4px 0; }
+  .empty-cards { font-size: 14px; margin: 4px 0 10px; }
+  .switch { display: flex; align-items: center; gap: 10px; margin: 6px 0 16px; font-size: 15px; }
+  .switch input { width: 22px; height: 22px; accent-color: var(--line); }
+  .tones { grid-template-columns: repeat(4, 1fr); }
+  #team-form .btn.send, #ses-form .btn.send { margin-top: 6px; }
+
+  /* ---------- 首頁：開展隊卡片 ---------- */
+  .team-list { display: grid; gap: 12px; }
+  .team-card { display: flex; text-align: left; width: 100%; padding: 0; border: 0; background: var(--paper); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); cursor: pointer; color: var(--ink); }
+  .tc-band { width: 10px; flex: none; background: linear-gradient(var(--tc) 70%, var(--tn) 70%); }
+  .tc-main { padding: 14px 16px; flex: 1; min-width: 0; }
+  .tc-main > b { display: block; font-family: var(--serif); font-weight: 900; font-size: 18px; line-height: 1.4; }
+  .tc-main > small { display: block; color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+  .tc-stats { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--ink-2); }
+  .tc-stats b { font-family: var(--serif); font-size: 20px; color: var(--ink); margin-right: 3px; }
+
+  /* ---------- 開展隊頁首與底部分頁 ---------- */
+  .team-top { position: relative; margin: 0 -16px 14px; padding: calc(12px + env(safe-area-inset-top)) 56px 16px 16px; background: var(--chrome); color: var(--chrome-fg); border-bottom: 3px solid var(--marigold); }
+  .team-top h1 { font-family: var(--serif); font-weight: 900; font-size: 21px; line-height: 1.35; margin: 4px 0 2px; }
+  .team-top p { margin: 0; font-size: 13px; color: rgba(247, 241, 228, .78); }
+  .team-top .help { position: absolute; right: 14px; top: calc(14px + env(safe-area-inset-top)); width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--marigold); background: transparent; color: var(--marigold); font-family: var(--serif); font-weight: 900; font-size: 18px; cursor: pointer; }
+  .back.light { color: rgba(247, 241, 228, .8); padding: 2px 0; font-size: 14px; }
+  .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--paper); border-top: 1px solid var(--rule); box-shadow: 0 -4px 18px rgba(30, 40, 30, .08); padding-bottom: env(safe-area-inset-bottom); }
+  .bn-inner { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
+  .bottom-nav button { background: none; border: 0; padding: 8px 2px 7px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11.5px; color: var(--ink-2); cursor: pointer; position: relative; }
+  .bottom-nav button svg { width: 22px; height: 22px; }
+  .bottom-nav button[aria-current="page"] { color: var(--line); font-weight: 700; }
+  .bottom-nav button[aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 3px; border-radius: 0 0 3px 3px; background: var(--marigold); }
+  body.has-nav #app { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  body.has-nav .toast, body.has-nav .notice { bottom: calc(80px + env(safe-area-inset-bottom)); }
+
+  /* ---------- 時段列表 ---------- */
+  .grp-h { font-size: 13px; color: var(--ink-2); margin: 16px 0 8px; font-weight: 700; letter-spacing: .04em; }
+  .ses-list { display: grid; gap: 10px; }
+  .ses-card { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: var(--paper); border: 0; border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow); cursor: pointer; color: var(--ink); }
+  .ses-card .date { flex: none; width: 52px; text-align: center; border-right: 2px dashed var(--rule); padding-right: 12px; }
+  .ses-card .date b { display: block; font-family: var(--serif); font-size: 26px; line-height: 1.1; color: var(--line); }
+  .ses-card .date small { font-size: 11px; color: var(--ink-2); white-space: nowrap; }
+  .ses-card .info { flex: 1; min-width: 0; }
+  .ses-card .info > b { display: block; font-size: 16px; }
+  .ses-card .info > small { display: block; color: var(--ink-2); font-size: 13px; }
+  .ses-card .go { color: var(--ink-2); font-size: 22px; }
+  .chips-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .state.s-on { background: var(--line); color: #fff; }
+  .state.s-soon { background: var(--gold-soft); color: var(--gold-text); }
+  .state.s-end { background: var(--sky-2); color: var(--ink-2); }
+  .state.mine { background: rgba(44, 91, 71, .12); color: var(--line); font-weight: 700; }
+
+  /* ---------- 一個時段 ---------- */
+  .ses-head .ph-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .ses-title { font-family: var(--serif); font-weight: 900; font-size: 22px; margin: 8px 0 2px !important; line-height: 1.35; }
+  .ses-when { margin: 0; font-weight: 700; color: var(--line); }
+  .ses-note { margin: 8px 0 0; font-size: 14px; color: var(--ink-2); white-space: pre-wrap; }
+  .ses-people { margin: 10px 0 0; font-size: 13px; color: var(--ink-2); display: grid; gap: 2px; }
+  .act-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .act-row .btn.small { margin: 0; }
+  .join-box { background: var(--gold-soft); border: 1.5px dashed var(--marigold); border-radius: 16px; padding: 16px; text-align: center; }
+  .join-box p { margin: 0 0 12px; }
+  .counters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .counter { background: var(--sky); border-radius: 14px; padding: 10px 6px 8px; text-align: center; min-width: 0; }
+  .c-top { display: flex; justify-content: center; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; position: relative; }
+  .c-x { position: absolute; right: -2px; top: -4px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); font-size: 18px; cursor: pointer; }
+  .c-row { display: flex; align-items: center; justify-content: space-between; gap: 2px; margin: 6px 0 2px; }
+  .c-btn { width: 38px; height: 38px; flex: none; border-radius: 50%; border: 1.5px solid var(--rule); background: var(--paper); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+  .c-btn.plus { background: var(--line); border-color: var(--line); color: #fff; width: 44px; height: 44px; }
+  .c-btn:active { transform: scale(.94); }
+  .c-num { width: 100%; flex: 1; min-width: 0; text-align: center; font-family: var(--serif); font-weight: 900; font-size: 27px; border: 0; background: transparent; color: var(--ink); padding: 0; }
+  .c-num:focus { outline: 2px solid var(--marigold); border-radius: 8px; }
+  .counter small { color: var(--ink-2); font-size: 12px; }
+  .add-items { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+  .add-items .chip { padding: 4px 10px; font-size: 13px; }
+  .cnt-state { font-size: 12px; color: var(--gold-text); text-align: right; margin: 6px 0 0; min-height: 1.2em; }
+  .cards-h { border-top: 1.5px dashed var(--rule); padding-top: 14px; margin-top: 14px; }
+  .add-card { margin-top: 4px; border-style: dashed; }
+  .shot-only { display: none; }
+  .shooting .shot-only { display: block; }
+  .shot-cap { font-size: 13px; color: var(--ink-2); margin: -4px 0 10px; }
+  .shooting { padding: 16px !important; }
+
+  /* ---------- 記名卡片 ---------- */
+  .pcards { display: grid; gap: 12px; margin-bottom: 12px; }
+  .pcard { background: var(--paper); border: 1.5px solid var(--rule); border-left: 5px solid var(--marigold); border-radius: 14px; padding: 12px 14px; }
+  .pcard.urgent { border-color: rgba(176, 58, 46, .45); border-left-color: var(--stamp); background: linear-gradient(#FFF6F2, var(--paper) 60%); }
+  .pcard.editing { border-left-color: var(--line); box-shadow: var(--shadow); }
+  .pc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .pc-name b { font-size: 18px; margin-right: 6px; }
+  .urgent-mark { display: inline-flex; align-items: center; gap: 2px; color: var(--stamp); font-size: 12px; font-weight: 700; vertical-align: 2px; }
+  .urgent-mark svg { width: 14px; height: 14px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 6px; background: var(--sky-2); color: var(--ink); white-space: nowrap; }
+  .tag.open-A { background: #DCEFE3; color: #1E6440; font-weight: 700; }
+  .tag.open-B { background: #F5EBD3; color: #7A5A1E; font-weight: 700; }
+  .tag.open-C { background: #ECEAE6; color: #6B6862; font-weight: 700; }
+  .tag.gold { background: var(--gold-soft); color: var(--gold-text); font-weight: 700; }
+  .tag.muted-tag { color: var(--ink-2); }
+  .pc-flags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+  .flag { min-width: 40px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1.5px solid var(--rule); background: var(--paper); color: var(--ink-2); font-weight: 700; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+  .flag[aria-pressed="true"] { background: var(--fc); border-color: var(--fc); color: #fff; }
+  .flag.star[aria-pressed="true"] { background: var(--stamp); border-color: var(--stamp); }
+  .flag.star { font-size: 13px; }
+  .flag:disabled { cursor: default; opacity: 1; }
+  .flag:disabled[aria-pressed="false"] { opacity: .45; }
+  .pc-info { display: grid; grid-template-columns: 4.2em 1fr; gap: 3px 8px; margin: 8px 0 0; font-size: 14px; }
+  .pc-info dt { color: var(--ink-2); }
+  .pc-info dd { margin: 0; word-break: break-word; white-space: pre-wrap; }
+  .pc-info a { color: var(--line); }
+  .pc-photos { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; }
+  .pc-photos img { height: 96px; border-radius: 10px; }
+  .pc-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sky-2); font-size: 12.5px; color: var(--ink-2); }
+  .pc-edit-h { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; margin: 0 0 10px; }
+  .pc-edit-h small { font-weight: 400; color: var(--ink-2); font-size: 12px; }
+  .pcard .field { margin-bottom: 8px; }
+  .pcard .field input, .pcard .field textarea { min-height: 46px; padding: 10px 12px; }
+  .pcard .field textarea { min-height: 64px; }
+  .pcard .btn-row { margin-top: 6px; }
+  .photos { display: flex; gap: 8px; flex-wrap: wrap; }
+  .photos .ph { position: relative; width: 76px; height: 76px; border-radius: 12px; overflow: hidden; background: var(--rule); }
+  .photos .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photos .ph button { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(0,0,0,.55); color: #fff; cursor: pointer; }
+  .photos .ph.add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: var(--sky); border: 1.5px dashed var(--rule); color: var(--ink-2); font-size: 12px; cursor: pointer; }
+
+  /* ---------- 一鍵複製、存圖 ---------- */
+  .tools { display: flex; gap: 4px; flex: none; }
+  .tool { display: inline-flex; align-items: center; gap: 3px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink-2); border-radius: 8px; padding: 4px 7px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .tool svg { width: 15px; height: 15px; }
+  .tool:active { background: var(--sky-2); }
+  .tools .btn.small { margin: 0 4px 0 0; }
+
+  /* ---------- 彙整 ---------- */
+  .ses-pick { margin-bottom: 14px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 6px; }
+  .tile { background: var(--sky); border-radius: 12px; padding: 8px 6px; text-align: center; }
+  .tile b { display: block; font-family: var(--serif); font-size: 26px; line-height: 1.15; color: var(--line); }
+  .tile small { font-size: 12px; color: var(--ink-2); }
+  .tbl-h { font-size: 15px; margin: 18px 0 8px; display: flex; align-items: baseline; }
+  .tbl-wrap { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+  .shooting .tbl-wrap { overflow: visible; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .tbl th { font-size: 12px; color: var(--ink-2); font-weight: 700; text-align: left; padding: 6px 6px; border-bottom: 1.5px solid var(--rule); white-space: nowrap; }
+  .tbl td { padding: 8px 6px; border-bottom: 1px solid var(--sky-2); vertical-align: top; }
+  .num-tbl th:not(:first-child), .num-tbl td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+  .num-tbl td.nm small { display: block; font-size: 11.5px; color: var(--ink-2); }
+  .num-tbl tfoot td { font-weight: 900; border-top: 1.5px solid var(--ink); border-bottom: 0; }
+  .names-tbl td:first-child { color: var(--ink-2); width: 1.8em; }
+  .names-tbl tr.row { cursor: pointer; }
+  .names-tbl tr.row:active td { background: var(--sky); }
+  .names-tbl tr.row[aria-expanded="true"] td { background: var(--gold-soft); }
+  .names-tbl tr.urgent td.nm { color: var(--stamp); font-weight: 700; }
+  .names-tbl td.nm { white-space: nowrap; }
+  .star-s svg { width: 13px; height: 13px; vertical-align: -1px; color: var(--stamp); margin-right: 1px; }
+  .fl { display: inline-block; font-style: normal; font-size: 11px; font-weight: 700; color: #fff; background: var(--fc); border-radius: 4px; padding: 0 3px; margin-left: 3px; vertical-align: 1px; }
+  .names-tbl tr.detail td { padding: 6px 0 12px; background: var(--sky); color: var(--ink); width: auto; }
+  .tbl-hint { font-size: 12px; color: var(--ink-2); margin: 6px 0 0; }
+  .chips .chip.on { background: var(--line); color: #fff; border: 1.5px solid var(--line); font-weight: 700; }
+  .chips { margin: 0 0 10px; }
+
+  /* ---------- 代禱牆 ---------- */
+  .pray-wall { background: var(--paper); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); }
+  .urgent-sum { background: rgba(176, 58, 46, .08); color: var(--stamp); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 700; margin: 0 0 12px; }
+  .urgent-sum svg { width: 15px; height: 15px; vertical-align: -2px; }
+  .blocks { display: grid; gap: 12px; }
+  .pblock { border-radius: 14px; border: 1.5px solid color-mix(in srgb, var(--fc) 35%, transparent); background: color-mix(in srgb, var(--fc) 6%, var(--paper)); padding: 12px; }
+  .pb-h { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .pb-h b { font-size: 16px; }
+  .pb-h .tools { margin-left: auto; }
+  .pb-ch { width: 34px; height: 34px; border-radius: 10px; background: var(--fc); color: #fff; display: grid; place-items: center; font-family: var(--serif); font-weight: 900; font-size: 19px; flex: none; }
+  .pb-names { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pn { display: inline-flex; align-items: center; gap: 2px; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 5px 10px; font-size: 15px; cursor: pointer; }
+  .pn small { color: var(--ink-2); font-size: 12px; }
+  .pn.hot { background: var(--stamp); border-color: var(--stamp); color: #fff; font-weight: 900; font-size: 17px; box-shadow: 0 2px 8px rgba(176, 58, 46, .35); }
+  .pn.hot small { color: rgba(255,255,255,.85); font-weight: 400; }
+  .pn.hot svg { width: 15px; height: 15px; color: #FFD27A; }
+  .pray-tip { margin: 12px 0 0; }
+
+  /* ---------- 隊員 ---------- */
+  .invite-link { background: var(--sky); border-radius: 10px; padding: 8px 10px; margin: 8px 0 4px; }
+  .invite-link code { font-size: 12.5px; word-break: break-all; }
+  .invite .small { margin: 10px 0 0; }
+  .members .nm small { font-weight: 400; color: var(--ink-2); }
+  .members .ttl { font-size: 13px; color: var(--gold-text); font-weight: 700; }
+  .members .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+  .members .link-btn { padding-left: 0; margin-top: 2px; font-size: 13px; }
+  .member-edit { background: var(--sky); border-radius: 12px; padding: 12px; margin-top: 8px; }
+  .member-edit .chips { margin: 0 0 10px; }
+  .perm-presets { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+  .perm-presets .chip { padding: 4px 10px; font-size: 13px; }
+  .checks { display: grid; gap: 6px; }
+  .check { display: flex; align-items: flex-start; gap: 10px; background: var(--paper); border: 1.5px solid var(--rule); border-radius: 12px; padding: 10px 12px; font-size: 15px; cursor: pointer; }
+  .check input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--line); flex: none; }
+  .check small { display: block; font-size: 12px; color: var(--ink-2); }
+  #ses-form .checks { grid-template-columns: 1fr 1fr; }
+  .perm-help { margin: 12px 2px; line-height: 1.7; }
+  .danger-zone { border: 1.5px solid rgba(176, 58, 46, .3); border-radius: 14px; padding: 14px; margin-top: 8px; }
+  .danger-zone p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
+
+  /* ---------- 確認視窗、存圖畫面 ---------- */
+  .modal { position: fixed; inset: 0; z-index: 900; background: rgba(16, 22, 18, .55); display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity .15s; }
+  .modal.on { opacity: 1; }
+  .modal-panel { background: var(--paper); border-radius: 18px; padding: 20px; width: min(360px, 100%); box-shadow: 0 16px 40px rgba(0,0,0,.3); }
+  .modal-panel.wide { width: min(440px, 100%); max-height: 88vh; overflow-y: auto; background: var(--sky); }
+  .modal-panel h2 { font-size: 18px; margin: 0 0 8px; line-height: 1.45; }
+  .modal-panel p { margin: 0 0 16px; color: var(--ink-2); font-size: 15px; }
+  .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-btns .btn { padding: 13px; font-size: 16px; }
+  .save-sheet { position: fixed; inset: 0; z-index: 950; background: rgba(16, 22, 18, .7); display: flex; align-items: center; justify-content: center; padding: 14px; }
+  .save-sheet .ss-panel { background: #fff; border-radius: 16px; padding: 14px; width: 100%; max-width: 440px; max-height: 92vh; display: flex; flex-direction: column; gap: 10px; }
+  .save-sheet .ss-tip { margin: 0; font-size: 14.5px; line-height: 1.6; }
+  .save-sheet .ss-img { display: block; width: 100%; height: auto; min-height: 0; flex: 1; object-fit: contain; border-radius: 10px; border: 1px solid var(--rule); -webkit-touch-callout: default; user-select: auto; }
+  .save-sheet .ss-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .save-sheet .ss-btns .btn { margin: 0; }
+  @media (prefers-reduced-motion: reduce) { .modal { transition: none; } }
+  .sec-h.stack { flex-direction: column-reverse; align-items: stretch; gap: 6px; }
+  .sec-h.stack .tools { align-self: flex-end; }
+  .ses-pick { margin-top: 12px; }
+</style>
+</head>
+<body>
+<main id="app"><div class="loading" role="status"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<nav class="bottom-nav" id="bnav" hidden></nav>
+<div class="notice" id="notice" role="status" hidden><span id="notice-text"></span><button type="button" id="notice-go"></button><button type="button" id="notice-x" aria-label="關閉">×</button></div>
+<script>
+/* ======== 只需要改這兩行 ======== */
+const LIFF_ID = '請填 LIFF ID';
+const GAS_URL = '請填 Apps Script 網址';
+/* ================================ */
+
+let PARAMS = new URLSearchParams(location.search);
+// LIFF 還沒設定，或網址帶 ?demo 時，用範例資料預覽畫面
+const DEMO = LIFF_ID.startsWith('請填') || PARAMS.has('demo');
+const DEMO_MODE = PARAMS.get('demo') || '';
+
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let NAV = 0; // 每換一次畫面加 1；背景抓到新資料時，只在使用者還停在同一個畫面才重畫
+const view = (html, keepScroll) => { NAV++; const y = scrollY; $app.innerHTML = html; window.scrollTo(0, keepScroll ? y : 0); };
+const $ = id => document.getElementById(id);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const loading = () => `<div class="loading" role="status"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const isHttps = u => /^https:\/\//.test(u || '');
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ================= 日期 ================= */
+const WD = '日一二三四五六';
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseYmd = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? new Date(+m[1], m[2] - 1, +m[3]) : null; };
+const md = d => `${d.getMonth() + 1}/${d.getDate()}`;
+const dayLabel = s => { const d = parseYmd(s); return d ? `${md(d)}（${WD[d.getDay()]}）` : ''; };
+const periodLabel = (a, b) => a || b ? `${a ? dayLabel(a) : ''}～${b ? dayLabel(b) : ''}` : '';
+const timeRange = s => s.start || s.end ? `${s.start || ''}${s.end ? '–' + s.end : ''}` : '';
+/** 時段的標題：「11/20（四）14:00–16:00・一中街」 */
+const sesLabel = s => [`${dayLabel(s.date)} ${timeRange(s)}`.trim(), s.place].filter(Boolean).join('・');
+const sesName = s => s.title || s.place || '開展時段';
+/** 時段狀態：還沒開始／進行中／已結束 */
+function sesState(s) {
+  const now = DEMO ? DEMO_NOW : new Date();
+  const d = parseYmd(s.date); if (!d) return '';
+  const at = t => { const m = /^(\d{2}):(\d{2})$/.exec(t || ''); const x = new Date(d); if (m) x.setHours(+m[1], +m[2]); return x; };
+  const st = s.start ? at(s.start) : d, en = s.end ? at(s.end) : new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59);
+  if (now < st) return ymd(now) === s.date ? '今天' : '即將';
+  if (now > en) return '已結束';
+  return '進行中';
+}
+
+/* ================= 固定的選項 ================= */
+const ITEMS = [
+  { k: 'contact', label: '接觸人數', short: '接觸', unit: '人' },
+  { k: 'visit', label: '叩訪戶數', short: '叩訪', unit: '戶' },
+  { k: 'tract', label: '發單張數', short: '發單', unit: '張' },
+  { k: 'preach', label: '傳講人數', short: '傳講', unit: '人' },
+  { k: 'call', label: '呼求人數', short: '呼求', unit: '人' },
+  { k: 'valid', label: '有效名單', short: '名單', unit: '人' },
+];
+const ITEM = Object.fromEntries(ITEMS.map(x => [x.k, x]));
+const GENDERS = ['男', '女'];
+const AGES = ['年長', '中壯', '青壯', '青職', '大學', '中學', '兒童'];
+const OPENS = [{ v: 'A', label: 'A 非常敞開' }, { v: 'B', label: 'B 普通不排斥' }, { v: 'C', label: 'C 較無興趣' }];
+const openLabel = v => (OPENS.find(o => o.v === v) || {}).label || '';
+const FLAGS = [
+  { k: 'fu', short: '福', label: '福（受浸）', color: '#B5543C' },
+  { k: 'jia', short: '家', label: '家（家聚會）', color: '#C08A2E' },
+  { k: 'pai', short: '排', label: '排（小排）', color: '#2C6E5A' },
+  { k: 'qu', short: '區', label: '區（主日）', color: '#3A5A8C' },
+];
+const PERMS = [
+  { k: 'manage', label: '管理隊員與設定', help: '設定職稱與權限、邀請連結、修改開展隊' },
+  { k: 'session', label: '建立開展時段', help: '可以開新的開展時段' },
+  { k: 'contacts', label: '看所有聯絡資料', help: '看得到別人記名卡片上的手機、LINE ID、地址、照片' },
+  { k: 'editAll', label: '編輯所有記名卡片', help: '可以修改、刪除別人記的名單' },
+];
+const TITLE_CHIPS = ['隊長', '副隊長', '組長', '記錄', '代禱', '隊員'];
+
+/* ================= 開展隊色調 ================= */
+const THEMES = {
+  gospel:  { name: '福音綠', btn: '#2C5B47', notch: '#C49356', paper: '#FFFDF8', band: '#22483A' },
+  classic: { name: '海軍藍', btn: '#2F3343', notch: '#C49356', paper: '#FFFDF8', band: '#2F3343' },
+  sky:     { name: '晴空藍', btn: '#2B5C8A', notch: '#9CC3E4', paper: '#F7FAFD', band: '#244E76' },
+  harvest: { name: '禾場金', btn: '#8A5A1E', notch: '#E2B25C', paper: '#FFFAF0', band: '#6E4818' },
+  dawn:    { name: '晨曦紅', btn: '#A2432F', notch: '#EBA67A', paper: '#FFF8F3', band: '#86362A' },
+  youth:   { name: '青年紫', btn: '#5E3D8F', notch: '#F2B84B', paper: '#FBF8FF', band: '#4B3075' },
+  kids:    { name: '兒童橘', btn: '#B4470F', notch: '#F4C542', paper: '#FFFBEF', band: '#923A0C' },
+  service: { name: '湖水綠', btn: '#1F6F78', notch: '#8FC1C7', paper: '#F4FAFA', band: '#185A62' },
+};
+const themeOf = t => THEMES[t && t.theme] || THEMES.gospel;
+const themeVars = th => `--line:${th.btn};--line-dark:${th.band};--chrome:${th.band};--marigold:${th.notch};--paper:${th.paper}`;
+
+/* ================= 確認視窗 ================= */
+function confirmBox({ title, text = '', ok = '確定', danger = true }) {
+  return new Promise(res => {
+    const box = document.createElement('div');
+    box.className = 'modal';
+    box.innerHTML = `<div class="modal-panel" role="alertdialog" aria-modal="true" aria-labelledby="mb-t">
+      <h2 id="mb-t">${esc(title)}</h2>${text ? `<p>${esc(text)}</p>` : ''}
+      <div class="modal-btns"><button type="button" class="btn plain" data-r="0">取消</button><button type="button" class="btn ${danger ? 'danger-fill' : 'send'}" data-r="1">${esc(ok)}</button></div></div>`;
+    document.body.append(box);
+    requestAnimationFrame(() => box.classList.add('on'));
+    const done = v => { box.remove(); removeEventListener('keydown', key, true); res(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); done(false); } };
+    addEventListener('keydown', key, true);
+    box.addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) done(b.dataset.r === '1'); else if (e.target === box) done(false); });
+    box.querySelector('[data-r="1"]').focus();
+  });
+}
+
+/* ================= 一鍵複製、一鍵存成圖片 =================
+   每個頁面、卡片的右上角都有一組按鈕：tools('複製的種類:參數', '要截圖的元素 id', '檔名') */
+const tools = (copyKey, shotId, name, extra = '') => `<div class="tools no-shot">
+  ${extra}<button type="button" class="tool" data-act="copy" data-k="${esc(copyKey)}" aria-label="複製文字">${ICON.copy}<span>複製</span></button>
+  <button type="button" class="tool" data-act="shot" data-id="${esc(shotId)}" data-name="${esc(name)}" aria-label="存成圖片">${ICON.image}<span>存圖</span></button></div>`;
+function copyText(text, done = '已複製，可以貼到 LINE') {
+  const fallback = () => {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove(); toast(ok ? done : '無法複製，請長按文字自行複製');
+  };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(() => toast(done), fallback); else fallback();
+}
+let SHOT_LIB = null;
+function loadShotLib() {
+  if (window.modernScreenshot) return Promise.resolve(window.modernScreenshot);
+  return SHOT_LIB || (SHOT_LIB = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = 'lib/modern-screenshot.js';
+    s.onload = () => window.modernScreenshot ? res(window.modernScreenshot) : rej(new Error('截圖工具載入失敗'));
+    s.onerror = () => { SHOT_LIB = null; rej(new Error('截圖工具載入失敗，請再試一次')); };
+    document.head.appendChild(s);
+  }));
+}
+async function shotElement(el, filename) {
+  const ms = await loadShotLib();
+  el.classList.add('shooting');
+  try {
+    const w = Math.ceil(Math.max(el.scrollWidth, el.getBoundingClientRect().width));
+    const blob = await ms.domToBlob(el, {
+      scale: Math.min(3, Math.max(2, window.devicePixelRatio || 2)), type: 'image/png', width: w,
+      font: false, timeout: 15000,
+      style: { margin: '0', boxShadow: 'none', transform: 'none', animation: 'none', transition: 'none' },
+      filter: n => !(n.classList && n.classList.contains('no-shot')),
+      fetch: { requestInit: { mode: 'cors', cache: 'force-cache' }, placeholderImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=' },
+    });
+    return blob;
+  } finally { el.classList.remove('shooting'); }
+}
+const fileName = s => `${String(s || '開展紀錄').replace(/[\\/:*?"<>|\s]+/g, '').slice(0, 40)}-${ymd(new Date())}.png`;
+/** 手機（含 LINE 內建瀏覽器）：<a download> 常常沒反應，所以在畫面上打開圖片，讓使用者長按存到相簿，或按「分享／儲存」 */
+const isMobileUA = () => { const ua = navigator.userAgent || ''; return /Android|iPhone|iPad|iPod|Line\//i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1); };
+async function saveBlob(blob, filename) {
+  const file = new File([blob], filename, { type: 'image/png' });
+  if (!isMobileUA()) {
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    toast('已下載圖片'); return;
+  }
+  const r = new FileReader();
+  r.onload = () => {
+    $$('.save-sheet').forEach(x => x.remove());
+    const canShare = !!(navigator.canShare && navigator.share && (() => { try { return navigator.canShare({ files: [file] }); } catch (e) { return false; } })());
+    const box = document.createElement('div');
+    box.className = 'save-sheet'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', '存成圖片');
+    box.innerHTML = `<div class="ss-panel"><p class="ss-tip"><b>長按下面的圖片</b>，選「儲存圖片」或「加入照片」，就會存到手機相簿；也可以直接分享到 LINE。</p>
+      <img class="ss-img" alt="${esc(filename)}" src="${r.result}">
+      <div class="ss-btns">${canShare ? '<button type="button" class="btn send small" id="ss-share">分享／儲存</button>' : ''}
+        <a class="btn plain small" href="${r.result}" download="${esc(filename)}">下載</a><button type="button" class="btn plain small" id="ss-close">關閉</button></div></div>`;
+    document.body.append(box);
+    const close = () => box.remove();
+    box.addEventListener('click', e => { if (e.target === box) close(); });
+    box.querySelector('#ss-close').onclick = close;
+    const sh = box.querySelector('#ss-share');
+    if (sh) sh.onclick = async () => { try { await navigator.share({ files: [file], title: filename }); close(); } catch (e) { if (!e || e.name !== 'AbortError') toast('這個瀏覽器不能直接分享，請長按圖片儲存'); } };
+  };
+  r.readAsDataURL(blob);
+}
+
+/* ================= 小圖示 ================= */
+const svg = (d, extra = '') => `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
+const ICON = {
+  copy: svg('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>'),
+  image: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>'),
+  rec: svg('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
+  ses: svg('<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/>'),
+  all: svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+  pray: svg('<path d="M21 12a8.5 8.5 0 0 1-12.4 7.6L3 21l1.5-5A8.5 8.5 0 1 1 21 12z"/><path d="M12 15.5s-3.5-2-3.5-4.2a1.8 1.8 0 0 1 3.5-.6 1.8 1.8 0 0 1 3.5.6c0 2.2-3.5 4.2-3.5 4.2z"/>'),
+  mem: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/>'),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  minus: svg('<path d="M5 12h14"/>'),
+  star: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
+  phone: svg('<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>'),
+  send: svg('<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>'),
+};
+
+/* ================= 預覽模式用的「現在時間」 ================= */
+const DEMO_NOW = new Date(2026, 10, 20, 15, 10); // 11/20（五）下午，正在開展
+const now = () => DEMO ? DEMO_NOW : new Date();
+/* ================= 預覽模式的假資料 ================= */
+const demo = (() => {
+  const people = { U1: '孫學暐', U2: '簡晨光', U3: '王小明', U4: '陳怡君', U5: '林志豪', U6: '黃以琳' };
+  const members = [
+    { userId: 'U2', title: '隊長', perms: 'owner', joined: '2026/11/1 20:10' },
+    { userId: 'U1', title: '副隊長', perms: 'manage,session,contacts,editAll', joined: '2026/11/1 20:31' },
+    { userId: 'U4', title: '記錄', perms: 'session,contacts', joined: '2026/11/2 08:02' },
+    { userId: 'U3', title: '隊員', perms: 'session', joined: '2026/11/2 09:15' },
+    { userId: 'U5', title: '隊員', perms: 'session', joined: '2026/11/3 12:40' },
+    { userId: 'U6', title: '代禱', perms: 'session', joined: '2026/11/5 21:05' },
+  ];
+  const all = ITEMS.map(x => x.k);
+  const sessions = [
+    { id: 'S1', title: '一中街掃街', date: '2026-11-07', start: '14:00', end: '16:30', place: '一中街', items: all, creatorId: 'U2', note: '' },
+    { id: 'S2', title: '大學校園', date: '2026-11-10', start: '18:30', end: '20:30', place: '中興大學', items: ['contact', 'tract', 'preach', 'call', 'valid'], creatorId: 'U1', note: '' },
+    { id: 'S3', title: '社區叩門', date: '2026-11-14', start: '09:30', end: '11:30', place: '北屯區崇德路社區', items: ['contact', 'visit', 'tract', 'preach', 'call', 'valid'], creatorId: 'U4', note: '兩人一組，帶福音單張與小冊' },
+    { id: 'S4', title: '公園福音', date: '2026-11-17', start: '19:00', end: '20:30', place: '文心森林公園', items: ['contact', 'tract', 'preach', 'call', 'valid'], creatorId: 'U2', note: '' },
+    { id: 'S5', title: '一中街掃街', date: '2026-11-20', start: '14:00', end: '17:00', place: '一中街', items: all, creatorId: 'U2', note: '' },
+    { id: 'S6', title: '週六社區叩門', date: '2026-11-21', start: '09:30', end: '11:30', place: '西屯區福科路社區', items: ['contact', 'visit', 'tract', 'preach', 'call', 'valid'], creatorId: 'U1', note: '' },
+  ];
+  let seed = 7; const rnd = n => { seed = (seed * 9301 + 49297) % 233280; return Math.floor(seed / 233280 * n); };
+  const counts = [];
+  const join = { S1: ['U2', 'U1', 'U3', 'U4'], S2: ['U1', 'U5', 'U6'], S3: ['U4', 'U2', 'U3', 'U5'], S4: ['U2', 'U1', 'U6'], S5: ['U2', 'U1', 'U3'], S6: ['U1'] };
+  sessions.forEach(s => (join[s.id] || []).forEach(u => {
+    const c = {};
+    if (s.id !== 'S6') s.items.forEach(k => { const base = { contact: 14, visit: 6, tract: 30, preach: 8, call: 4, valid: 1 }[k]; const n = base + rnd(base + 2); if (k !== 'valid') c[k] = n; });
+    if (s.id === 'S5' && u === 'U2') Object.assign(c, { contact: 9, visit: 3, tract: 22, preach: 5, call: 2 });
+    counts.push({ sid: s.id, userId: u, counts: c, updated: '' });
+  }));
+  const C = (id, sid, uid, o) => Object.assign({ id, sessionId: sid, ownerId: uid, name: '', gender: '', age: '', phone: '', lineId: '', address: '', open: '', photos: [], fu: false, jia: false, pai: false, qu: false, urgent: false, note: '', created: '', updated: '' }, o);
+  const cards = [
+    C('C1', 'S1', 'U2', { name: '王大明', gender: '男', age: '青職', phone: '0912-345-678', lineId: 'daming88', open: 'A', fu: true, jia: true, urgent: true, note: '剛到台中工作，願意下週來家聚會', created: '2026/11/7 15:02' }),
+    C('C2', 'S1', 'U3', { name: '李欣怡', gender: '女', age: '大學', phone: '0933-222-111', open: 'B', jia: true, created: '2026/11/7 15:30' }),
+    C('C3', 'S1', 'U4', { name: '張阿姨', gender: '女', age: '年長', address: '台中市北區育才街 12 號', open: 'A', fu: true, created: '2026/11/7 16:01' }),
+    C('C4', 'S1', 'U1', { name: '陳冠宇', gender: '男', age: '中學', open: 'B', pai: true, created: '2026/11/7 16:10' }),
+    C('C5', 'S2', 'U5', { name: '吳哲安', gender: '男', age: '大學', lineId: 'zhean.wu', open: 'A', pai: true, qu: true, urgent: true, created: '2026/11/10 19:20' }),
+    C('C6', 'S2', 'U6', { name: '劉品妤', gender: '女', age: '大學', phone: '0988-555-123', open: 'A', fu: true, pai: true, created: '2026/11/10 19:45' }),
+    C('C7', 'S2', 'U1', { name: '蔡承翰', gender: '男', age: '大學', open: 'C', created: '2026/11/10 20:02' }),
+    C('C8', 'S3', 'U4', { name: '林媽媽', gender: '女', age: '中壯', address: '北屯區崇德路二段 88 巷 3 號', open: 'A', jia: true, qu: true, created: '2026/11/14 10:05' }),
+    C('C9', 'S3', 'U2', { name: '黃先生', gender: '男', age: '中壯', phone: '0921-000-888', open: 'B', jia: true, created: '2026/11/14 10:40' }),
+    C('C10', 'S3', 'U3', { name: '小芸', gender: '女', age: '兒童', open: 'A', qu: true, note: '林媽媽的女兒', created: '2026/11/14 10:45' }),
+    C('C11', 'S4', 'U6', { name: '鄭伯伯', gender: '男', age: '年長', open: 'A', fu: true, urgent: true, created: '2026/11/17 19:40' }),
+    C('C12', 'S4', 'U2', { name: '許嘉玲', gender: '女', age: '青壯', lineId: 'jialing', open: 'B', jia: true, created: '2026/11/17 20:05' }),
+    C('C13', 'S5', 'U2', { name: '周子豪', gender: '男', age: '中學', phone: '0955-321-654', open: 'A', pai: true, created: '2026/11/20 14:40' }),
+    C('C14', 'S5', 'U1', { name: '楊雅婷', gender: '女', age: '大學', open: 'B', created: '2026/11/20 14:55' }),
+  ];
+  if (DEMO_MODE === 'first') { delete people.U2; }
+  return {
+    me: { userId: 'U2', displayName: '晨光', isAdmin: false },
+    people, members, sessions, counts, cards,
+    team: { id: 'T1', title: '2026 秋季台中一中福音開展隊', desc: '每週出外開展，記錄接觸的人，一起為他們禱告。', start: '2026-11-01', end: '2026-12-20', theme: 'gospel', code: 'K7Q2M9XA', open: true, ownerId: 'U2', owner: '簡晨光', created: '2026/11/1' },
+    teams: [{ id: 'T2', title: '寒假校園福音開展', desc: '', start: '2027-01-18', end: '2027-02-10', theme: 'sky', owner: '孫學暐', member: true, title2: '隊員', role: 'member', memberCount: 9, sessionCount: 0, lastDate: '', cardCount: 0 }],
+  };
+})();
+const DPERM = s => { if (s === 'owner') return { owner: true, manage: true, session: true, contacts: true, editAll: true }; const a = String(s).split(','); return { owner: false, ...Object.fromEntries(PERMS.map(p => [p.k, a.includes(p.k)])) }; };
+const DPERMSTR = p => PERMS.filter(x => p && p[x.k]).map(x => x.k).join(',');
+
+function demoTeam() {
+  const me = demo.me.userId, d = demo;
+  const myM = d.members.find(m => m.userId === me);
+  const perms = myM ? DPERM(myM.perms) : DPERM('');
+  const nm = u => d.people[u] || '';
+  return {
+    team: { ...d.team },
+    me: { userId: me, name: nm(me), perms, member: !!myM, isAdmin: false },
+    members: d.members.map(m => ({ userId: m.userId, name: nm(m.userId), title: m.title, perms: DPERM(m.perms), joined: m.joined })),
+    sessions: d.sessions.map(s => ({ ...s, creator: nm(s.creatorId), parts: d.counts.filter(c => c.sid === s.id).map(c => ({ userId: c.userId, name: nm(c.userId), counts: { ...c.counts }, updated: c.updated })) })),
+    cards: d.cards.map(c => {
+      const x = { ...c, photos: [...c.photos], owner: nm(c.ownerId), canEdit: c.ownerId === me || perms.editAll || perms.manage };
+      if (!perms.contacts && c.ownerId !== me) { x.phone = x.lineId = x.address = x.note = ''; x.photos = []; x.hidden = true; }
+      return x;
+    }),
+  };
+}
+async function demoApi(action, p) {
+  await sleep(PARAMS.has('slow') ? 1500 : 200);
+  const d = demo, me = d.me.userId;
+  const S = id => { const s = d.sessions.find(x => x.id === id); if (!s) throw new Error('找不到這個開展時段'); return s; };
+  switch (action) {
+    case 'home': return { ok: true, me: { ...d.me, name: d.people[me] || '' }, teams: [{ ...d.team, member: true, title2: '隊長', role: 'owner', memberCount: d.members.length, sessionCount: d.sessions.length, lastDate: '2026-11-21', cardCount: d.cards.length }, ...d.teams] };
+    case 'saveProfile': if (!String(p.name || '').trim()) throw new Error('請填寫姓名'); d.people[me] = p.name.trim(); return { ok: true, profile: { name: d.people[me] } };
+    case 'team': return { ok: true, ...demoTeam() };
+    case 'invite': return { ok: true, team: d.team, memberCount: d.members.length, already: DEMO_MODE !== 'join', name: d.people[me] || '' };
+    case 'joinTeam': if (p.name) d.people[me] = p.name; if (!d.members.some(m => m.userId === me)) d.members.push({ userId: me, title: '隊員', perms: 'session', joined: '' }); return { ok: true, teamId: 'T1' };
+    case 'createTeam': d.team = { ...d.team, ...p.team, id: 'T1' }; return { ok: true, team: d.team };
+    case 'updateTeam': Object.assign(d.team, p.team); return { ok: true, team: d.team };
+    case 'resetInvite': d.team.code = Math.random().toString(36).slice(2, 10).toUpperCase(); return { ok: true, team: d.team };
+    case 'deleteTeam': return { ok: true };
+    case 'setMember': { const m = d.members.find(x => x.userId === p.userId); if (p.title != null) m.title = p.title; if (p.perms && m.perms !== 'owner') m.perms = DPERMSTR(p.perms); return { ok: true, ...demoTeam() }; }
+    case 'removeMember': d.members = d.members.filter(x => x.userId !== p.userId); return { ok: true, ...demoTeam() };
+    case 'leaveTeam': return { ok: true };
+    case 'createSession': { const id = 'S' + Date.now(); d.sessions.push({ ...p.session, id, creatorId: me }); d.counts.push({ sid: id, userId: me, counts: {} }); return { ok: true, sessionId: id }; }
+    case 'updateSession': Object.assign(S(p.sessionId), p.session); return { ok: true };
+    case 'deleteSession': d.sessions = d.sessions.filter(x => x.id !== p.sessionId); d.cards = d.cards.filter(c => c.sessionId !== p.sessionId); return { ok: true };
+    case 'joinSession': if (!d.counts.some(c => c.sid === p.sessionId && c.userId === me)) d.counts.push({ sid: p.sessionId, userId: me, counts: {} }); return { ok: true };
+    case 'leaveSession': d.counts = d.counts.filter(c => !(c.sid === p.sessionId && c.userId === me)); return { ok: true };
+    case 'saveCounts': { let c = d.counts.find(x => x.sid === p.sessionId && x.userId === me); if (!c) d.counts.push(c = { sid: p.sessionId, userId: me }); c.counts = { ...p.counts }; return { ok: true, counts: c.counts }; }
+    case 'saveCard': {
+      const c = p.card;
+      if (c.id) { const x = d.cards.find(y => y.id === c.id); Object.assign(x, c, { updated: '剛剛' }); return { ok: true, card: { ...x, owner: d.people[x.ownerId], canEdit: true } }; }
+      const x = { ...c, id: 'C' + Date.now(), ownerId: me, created: `${md(now())} ${pad(now().getHours())}:${pad(now().getMinutes())}` };
+      d.cards.push(x); return { ok: true, card: { ...x, owner: d.people[me], canEdit: true } };
+    }
+    case 'setCardFlags': { const x = d.cards.find(y => y.id === p.cardId); Object.assign(x, p.flags); return { ok: true, card: { ...x, owner: d.people[x.ownerId], canEdit: true } }; }
+    case 'deleteCard': d.cards = d.cards.filter(y => y.id !== p.cardId); return { ok: true };
+    case 'uploadImage': return { ok: true, url: p.data };
+    case 'myData': return { ok: true, found: !!d.people[me], name: d.people[me] || '', lineName: '簡晨光 Isaiah', teams: 2, cards: d.cards.filter(c => c.ownerId === me).length };
+    case 'deleteMyData': return { ok: true, cards: 0 };
+  }
+  throw new Error('預覽模式不支援：' + action);
+}
+if (DEMO) window.liff = { isInClient: () => false, closeWindow() {}, isApiAvailable: () => false, getContext: () => null, isLoggedIn: () => true };
+
+/* ---------- LINE 程式庫在背景載入、初始化：有 60 天通行證時，畫面不用等它 ---------- */
+let LIFF_OK = DEMO;
+const LIFF_READY = DEMO ? Promise.resolve() : new Promise((ok, bad) => {
+  if (window.liff) return ok();
+  const sc = document.createElement('script');
+  sc.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
+  sc.onload = ok; sc.onerror = () => bad(new Error('LINE 程式庫載入失敗，請檢查網路'));
+  document.head.append(sc);
+}).then(() => liff.init({ liffId: LIFF_ID })).then(() => { LIFF_OK = true; });
+LIFF_READY.catch(() => {});
+const inClient = () => DEMO ? false : LIFF_OK ? liff.isInClient() : /\bLine\//i.test(navigator.userAgent);
+async function closeLine() { await LIFF_READY.catch(() => {}); if (LIFF_OK) liff.closeWindow(); }
+
+/* ---------- 平台通行證：登入一次，60 天內不用再登入 ---------- */
+const SESSION_KEY = 'outreach.session';
+const getSession = () => { try { const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); return s && s.expires > Date.now() + 60000 ? s : null; } catch (e) { return null; } };
+const setSession = s => { try { s ? localStorage.setItem(SESSION_KEY, JSON.stringify({ token: s.token, expires: s.expires })) : localStorage.removeItem(SESSION_KEY); } catch (e) {} };
+
+const READS = new Set(['home', 'team', 'invite', 'myData']);
+async function api(action, data = {}) {
+  if (DEMO) { const r = await demoApi(action, data); if (!READS.has(action) && action !== 'uploadImage' && action !== 'saveCounts') clearCache(); return JSON.parse(JSON.stringify(r)); }
+  const body = { action, ...data };
+  const s = action === 'session' ? null : getSession();
+  if (s) body.session = s.token; else { await LIFF_READY; body.idToken = liff.getIDToken(); }
+  const r = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!j.ok) {
+    if (j.error === 'SESSION_EXPIRED') {
+      setSession(null); await LIFF_READY;
+      if (liff.isLoggedIn()) return api(action, data);
+      liff.login({ redirectUri: location.href }); throw new Error('登入已過期，正在重新登入');
+    }
+    if (j.error === 'TOKEN_EXPIRED') { await LIFF_READY; liff.logout(); liff.login({ redirectUri: location.href }); throw new Error('登入已過期，正在重新登入'); }
+    throw new Error(j.error);
+  }
+  if (!READS.has(action) && action !== 'session' && action !== 'uploadImage' && action !== 'saveCounts') clearCache();
+  return j;
+}
+
+/* ---------- 加速：先用上次的資料馬上顯示，背景再向後端拿最新的 ---------- */
+const CACHE_KEY = 'outreach.cache.v1';
+let CACHE = {};
+try { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); const tk = (getSession() || {}).token || ''; CACHE = !DEMO && c.owner === tk.slice(0, 12) ? c.data || {} : {}; } catch (e) { CACHE = {}; }
+let cacheTimer;
+function saveCache() {
+  clearTimeout(cacheTimer);
+  cacheTimer = setTimeout(() => {
+    try {
+      const keys = Object.keys(CACHE); while (keys.length > 20) delete CACHE[keys.shift()];
+      const str = JSON.stringify({ owner: ((getSession() || {}).token || '').slice(0, 12), data: CACHE });
+      if (!DEMO && str.length < 3e6) localStorage.setItem(CACHE_KEY, str); else localStorage.removeItem(CACHE_KEY);
+    } catch (e) {}
+  }, 300);
+}
+function clearCache() { CACHE = {}; INFLIGHT.clear(); saveCache(); }
+const INFLIGHT = new Map();
+const ckey = (action, data) => action + ':' + JSON.stringify(data || {});
+function apiCached(action, data = {}, onFresh) {
+  const k = ckey(action, data), old = CACHE[k];
+  let p = INFLIGHT.get(k);
+  if (!p) {
+    p = api(action, data).then(r => { CACHE[k] = r; saveCache(); return r; }).finally(() => INFLIGHT.delete(k));
+    INFLIGHT.set(k, p);
+  }
+  if (old === undefined) return p;
+  p.then(r => { if (onFresh && JSON.stringify(r) !== JSON.stringify(old)) onFresh(r); }).catch(() => {});
+  return Promise.resolve(JSON.parse(JSON.stringify(old)));
+}
+
+/* ---------- 發到 LINE ---------- */
+async function pickAndSend(msg, done = '已發送') {
+  if (DEMO) { toast('預覽模式：正式版會在這裡跳出 LINE 的群組、好友選單'); return false; }
+  try { await LIFF_READY; } catch (e) { toast(e.message); return false; }
+  if (!liff.isLoggedIn()) { toast('發到 LINE 前需要登入一次'); setTimeout(() => liff.login({ redirectUri: location.href }), 600); return false; }
+  if (!liff.isApiAvailable('shareTargetPicker')) { toast('無法開啟 LINE 選單，請確認 LIFF 已開啟 Share target picker'); return false; }
+  try { const res = await liff.shareTargetPicker([msg], { isMultiple: true }); toast(res ? done : '已取消'); return !!res; }
+  catch (e) { toast('發送失敗：' + e.message); return false; }
+}
+const liffUrl = q => DEMO ? `${location.origin}${location.pathname}?demo&${q}` : `https://liff.line.me/${LIFF_ID}?${q}`;
+/* ================= 入口 ================= */
+let ME = null;     // { userId, name, isAdmin }
+let HOME = null;   // 首頁的開展隊列表
+async function main() {
+  try {
+    if (PARAMS.has('install')) return installFlow();
+    // 從 liff.line.me 進來時，參數包在 liff.state 裡
+    const st = PARAMS.get('liff.state');
+    if (st) { const q = st.includes('?') ? st.slice(st.indexOf('?') + 1) : ''; new URLSearchParams(q).forEach((v, k) => PARAMS.set(k, v)); }
+    if (!DEMO && !getSession()) {
+      view(loading());
+      await LIFF_READY;
+      new URLSearchParams(location.search).forEach((v, k) => PARAMS.set(k, v));
+      if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+      api('session').then(setSession).catch(() => {}); // 背景建立 60 天通行證
+    }
+    if (PARAMS.has('mydata')) return myDataFlow();
+    const join = PARAMS.get('join') || (DEMO_MODE === 'join' ? 'K7Q2M9XA' : '');
+    if (join) return joinFlow(join);
+    const tid = PARAMS.get('t') || (['team', 'session', 'sum', 'all', 'pray', 'mem', 'card'].includes(DEMO_MODE) ? 'T1' : '');
+    if (tid) {
+      const tab = { sum: 'ses', all: 'all', pray: 'pray', mem: 'mem' }[DEMO_MODE] || PARAMS.get('tab') || 'rec';
+      const sub = PARAMS.get('s') || (['session', 'card'].includes(DEMO_MODE) ? 'S5' : '');
+      return teamFlow(tid, tab, sub, PARAMS.get('j'));
+    }
+    await homeFlow();
+  } catch (e) { fatal(e); }
+}
+function fatal(e) {
+  view(`<section class="solo"><div class="ticket"><div class="main"><h2 class="title">無法開啟</h2><p>${esc(e.message)}</p><p class="muted">請關閉後從 LINE 重新開啟一次。</p></div></div>
+    <button class="btn plain" style="margin-top:16px" onclick="location.href=location.pathname${DEMO ? "+'?demo'" : ''}">回到首頁</button></section>`);
+}
+
+const brandHeader = () => `<header class="top"><div class="brand"><img class="logo" src="img/logo.svg" alt="" width="34" height="44"><h1>開展隊紀錄</h1></div><button class="help" id="help" type="button" aria-label="使用教學" data-act="tour">?</button></header>
+  ${DEMO ? `<p class="demo-note">預覽模式：目前使用範例資料。</p>` : ''}`;
+const subbar = (label, title, act = 'home') => `<div class="subbar"><button class="back" type="button" data-act="${act}">‹ ${esc(label)}</button>${title ? `<h1>${esc(title)}</h1>` : '<span></span>'}</div>`;
+
+/* ================= 首頁：我的開展隊 ================= */
+async function homeFlow() {
+  setNav(null);
+  document.title = 'LINE 開展隊紀錄與彙整建立平台';
+  history.replaceState(null, '', location.pathname + (DEMO ? '?demo' : ''));
+  if (!HOME) view(`${brandHeader()}${loading()}`);
+  const nav = NAV;
+  const r = await apiCached('home', {}, fresh => { HOME = fresh; ME = fresh.me; if (nav === NAV) renderHome(); });
+  HOME = r; ME = r.me;
+  renderHome();
+  maybeStartTour();
+}
+function renderHome() {
+  const teams = HOME.teams || [];
+  const role = t => t.role === 'owner' ? '負責人' : t.role === 'admin' ? '管理' : t.role === 'platform' ? '平台管理' : '隊員';
+  view(`${brandHeader()}
+    <p class="hello">${ME.name ? `平安，${esc(ME.name)}！` : '平安！'}選一個開展隊，或建立新的開展隊。</p>
+    <div class="team-list">${teams.map(t => { const th = themeOf(t); return `<button class="team-card" type="button" data-act="openTeam" data-id="${esc(t.id)}" style="--tc:${th.btn};--tn:${th.notch}">
+      <span class="tc-band"></span>
+      <span class="tc-main"><b>${esc(t.title)}</b><small>${esc(periodLabel(t.start, t.end) || '未設定期間')}・${esc(t.title2 || role(t))}</small>
+      <span class="tc-stats"><span><b>${t.sessionCount}</b>時段</span><span><b>${t.cardCount}</b>名單</span><span><b>${t.memberCount}</b>隊員</span></span></span></button>`; }).join('')
+      || `<div class="empty"><p>還沒有加入任何開展隊。</p><p class="muted">點負責人傳來的邀請連結就能加入；或自己建立一個開展隊，邀請大家一起來。</p></div>`}</div>
+    <button class="btn send" type="button" id="new-team" data-act="newTeam" style="margin-top:18px">${ICON.plus} 建立開展隊</button>
+    <div class="page-foot"><a class="mydata-link" href="#" data-act="mydata">我的資料</a><a class="mydata-link" href="#" data-act="install">安裝到手機桌面</a></div>`);
+}
+
+/* ================= 建立／修改開展隊 ================= */
+function teamForm(t, isNew) {
+  t = t || { title: '', desc: '', start: ymd(now()), end: '', theme: 'gospel', open: true };
+  const needName = isNew && !(ME && ME.name);
+  return `<form class="panel" id="team-form" autocomplete="off">
+    ${needName ? `<label class="field"><span>你的姓名（隊員會看到）</span><input name="myname" maxlength="20" required></label>` : ''}
+    <label class="field"><span>開展隊名稱</span><input name="title" maxlength="40" required value="${esc(t.title)}" placeholder="例如：2026 秋季一中福音開展隊"></label>
+    <label class="field"><span>說明（選填）</span><textarea name="desc" maxlength="300" placeholder="目標、範圍、集合地點…">${esc(t.desc)}</textarea></label>
+    <div class="row2"><label class="field"><span>開始日</span><input type="date" name="start" value="${esc(t.start)}"></label><label class="field"><span>結束日（選填）</span><input type="date" name="end" value="${esc(t.end)}"></label></div>
+    ${isNew ? `<label class="field"><span>你在這個隊的職稱</span><input name="myTitle" maxlength="12" value="隊長"></label>` : ''}
+    <div class="field"><span>色調</span><div class="tones" role="radiogroup">${Object.entries(THEMES).map(([k, th]) => `<button type="button" role="radio" aria-checked="${t.theme === k}" data-tone="${k}" style="--sw:${th.btn};--sw2:${th.notch}"><i></i>${th.name}</button>`).join('')}</div></div>
+    ${isNew ? '' : `<label class="switch"><input type="checkbox" name="open" ${t.open ? 'checked' : ''}><span>開放用邀請連結加入</span></label>`}
+    <button class="btn send" type="submit">${isNew ? '建立開展隊' : '儲存'}</button>
+  </form>`;
+}
+function bindTeamForm(onSubmit) {
+  const f = $('team-form');
+  f.querySelectorAll('[data-tone]').forEach(b => b.onclick = () => f.querySelectorAll('[data-tone]').forEach(x => x.setAttribute('aria-checked', x === b)));
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const v = n => (f.elements[n] ? f.elements[n].value : '').trim();
+    const theme = (f.querySelector('[data-tone][aria-checked="true"]') || {}).dataset?.tone || 'gospel';
+    const btn = f.querySelector('[type=submit]'), label = btn.textContent;
+    btn.disabled = true; btn.textContent = '儲存中…';
+    try { await onSubmit({ title: v('title'), desc: v('desc'), start: v('start'), end: v('end'), theme, myTitle: v('myTitle'), open: f.elements.open ? f.elements.open.checked : true }, v('myname')); }
+    catch (err) { toast(err.message); btn.disabled = false; btn.textContent = label; }
+  };
+}
+function newTeamFlow() {
+  view(`${subbar('我的開展隊', '建立開展隊')}${teamForm(null, true)}<p class="caption">建立後，你就是這個開展隊的負責人，可以發邀請連結給大家加入。</p>`);
+  bindTeamForm(async (team, myname) => {
+    const r = await api('createTeam', { team, name: myname });
+    if (myname && ME) ME.name = myname;
+    HOME = null;
+    teamFlow(r.team.id, 'mem', '');
+    toast('開展隊建立好了，發邀請連結給大家吧');
+  });
+}
+
+/* ================= 用邀請連結加入 ================= */
+async function joinFlow(code) {
+  view(loading());
+  const r = await api('invite', { code });
+  if (r.already) return teamFlow(r.team.id, 'rec', '');
+  const t = r.team, th = themeOf(t);
+  document.title = `加入「${t.title}」`;
+  view(`<section class="solo" style="${themeVars(th)}">
+    <div class="ticket"><div class="main"><p class="kicker">邀請你加入開展隊</p><h2 class="title">${esc(t.title)}</h2>
+      <dl>${t.start || t.end ? `<dt>期間</dt><dd>${esc(periodLabel(t.start, t.end))}</dd>` : ''}<dt>負責人</dt><dd>${esc(t.owner)}</dd><dt>隊員</dt><dd>${r.memberCount} 人</dd></dl>
+      ${t.desc ? `<p class="desc">${esc(t.desc)}</p>` : ''}</div>
+      <div class="perf"></div>
+      <div class="result-msg">${t.open ? `<label class="field"><span>你的姓名（隊員會看到）</span><input id="j-name" maxlength="20" value="${esc(r.name)}"></label>
+        <button class="btn send" type="button" id="j-go">加入開展隊</button>` : '<p>這個開展隊目前不開放加入，請向負責人詢問。</p>'}</div></div></section>`);
+  const go = $('j-go');
+  if (go) go.onclick = async () => {
+    const name = $('j-name').value.trim();
+    if (!name) { toast('請填寫姓名'); return; }
+    go.disabled = true; go.textContent = '加入中…';
+    try { const j = await api('joinTeam', { code, name }); HOME = null; if (ME) ME.name = name; toast('已加入，一起出去開展吧！'); teamFlow(j.teamId, 'rec', ''); }
+    catch (e) { toast(e.message); go.disabled = false; go.textContent = '加入開展隊'; }
+  };
+}
+
+/* ================= 我的資料 ================= */
+async function myDataFlow() {
+  setNav(null);
+  view(loading());
+  const d = await api('myData');
+  view(`${subbar('返回', '我的資料')}
+    <div class="panel">
+      <label class="field"><span>姓名（顯示在開展隊、記名卡片上）</span><input id="md-name" value="${esc(d.name)}" maxlength="20"></label>
+      <button class="btn send" type="button" id="md-save">儲存</button>
+      <p class="muted" style="margin-top:14px">LINE：${esc(d.lineName || '')}・加入 ${d.teams} 個開展隊・記了 ${d.cards} 張名單</p>
+      <p class="muted" style="margin-top:14px">刪除後，你的姓名、計數、你記的名單都會移除，並退出所有開展隊。你建立的開展隊要先刪除。</p>
+      <button class="btn cancel" type="button" id="md-del" style="margin-top:10px">刪除我的資料</button>
+    </div>`);
+  $('md-save').onclick = async () => { try { const r = await api('saveProfile', { name: $('md-name').value.trim() }); if (ME) ME.name = r.profile.name; HOME = null; toast('已儲存'); } catch (e) { toast(e.message); } };
+  $('md-del').onclick = async () => {
+    if (!await confirmBox({ title: '刪除我的資料？', text: '你的姓名、計數和你記的所有名單都會刪除，無法復原。', ok: '刪除' })) return;
+    try { const r = await api('deleteMyData'); setSession(null); view(`<section class="solo"><div class="ticket"><div class="main"><h2 class="title">已刪除你的資料</h2><p>已移除你的資料${r.cards ? `和 ${r.cards} 張名單` : ''}。</p></div></div></section>`); }
+    catch (e) { toast(e.message); }
+  };
+}
+
+/* ================= 安裝到手機桌面（PWA） ================= */
+let installPrompt = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; });
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+async function startInstall() {
+  if (inClient()) { await LIFF_READY; liff.openWindow({ url: `${location.origin}${location.pathname}?install=1`, external: true }); return; }
+  installFlow();
+}
+function installFlow() {
+  setNav(null);
+  document.title = '安裝「開展隊」';
+  const steps = isIOS()
+    ? `<ol class="install-steps"><li>用 <b>Safari</b> 開啟這個頁面</li><li>點下方的「分享」按鈕</li><li>往下滑，點「<b>加入主畫面</b>」</li><li>按右上角「新增」</li></ol>`
+    : `<ol class="install-steps"><li>點上面的「安裝到手機桌面」</li><li>如果沒有反應：點瀏覽器右上角「⋮」選單</li><li>選「<b>安裝應用程式</b>」或「<b>加到主畫面</b>」</li></ol>`;
+  view(`<section class="solo install">
+    <img class="app-icon" src="icons/icon-192.png" alt="" width="96" height="96"><h1>開展隊</h1>
+    <p class="muted">把「LINE 開展隊紀錄與彙整建立平台」放到手機桌面，出去開展時一點就能記錄。</p>
+    ${isStandalone() ? '<p class="posted">已經安裝好了，從桌面的圖示打開即可。</p>' : `<button class="btn send" id="do-install" ${isIOS() ? 'hidden' : ''}>安裝到手機桌面</button>${steps}`}
+    <p class="muted small">第一次從桌面打開時，會請你用 LINE 帳號登入一次。</p>
+    <button class="btn plain" style="margin-top:14px" onclick="location.href='${location.pathname}?pwa=1'">前往平台</button></section>`);
+  const btn = $('do-install');
+  if (btn) btn.onclick = async () => {
+    if (!installPrompt) { toast('請依照下面的步驟，從瀏覽器選單安裝'); return; }
+    installPrompt.prompt();
+    const r = await installPrompt.userChoice.catch(() => null);
+    installPrompt = null;
+    toast(r && r.outcome === 'accepted' ? '安裝完成，可以從桌面打開了' : '已取消安裝');
+  };
+}
+if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+/* ================= 開展隊 ================= */
+let TEAM = null;   // { team, me, members, sessions, cards }
+let TAB = 'rec';   // rec 開展紀錄｜ses 時段彙整｜all 累積彙整｜pray 代禱牆｜mem 隊員
+let SUB = '';      // 開展紀錄裡打開的時段；時段彙整選的時段
+const EDIT = {};   // 正在編輯的記名卡片：{ key: 草稿 }
+let NEWN = 0;
+const busy = () => Object.keys(EDIT).length > 0 || !!CNT.timer || !!document.querySelector('.modal, .member-edit');
+
+const TABS = [
+  { k: 'rec', label: '開展紀錄', icon: 'rec' },
+  { k: 'ses', label: '時段彙整', icon: 'ses' },
+  { k: 'all', label: '累積彙整', icon: 'all' },
+  { k: 'pray', label: '代禱牆', icon: 'pray' },
+  { k: 'mem', label: '隊員', icon: 'mem' },
+];
+function setNav(active) {
+  const n = $('bnav');
+  if (!active) { n.hidden = true; document.body.classList.remove('has-nav'); return; }
+  n.hidden = false; document.body.classList.add('has-nav');
+  n.setAttribute('style', themeVars(themeOf(TEAM.team)));
+  n.innerHTML = `<div class="bn-inner">${TABS.map(t => `<button type="button" data-act="tab" data-k="${t.k}" ${t.k === active ? 'aria-current="page"' : ''}>${ICON[t.icon]}<span>${t.label}</span></button>`).join('')}</div>`;
+}
+
+/* ---------- 資料小工具 ---------- */
+const sesById = id => TEAM.sessions.find(s => s.id === id);
+const partOf = (s, uid) => s.parts.find(p => p.userId === uid);
+const cardsIn = (sid, uid) => TEAM.cards.filter(c => c.sessionId === sid && (!uid || c.ownerId === uid));
+const memberName = uid => (TEAM.members.find(m => m.userId === uid) || {}).name || '';
+/** 一個人在一個時段的某個計數。「有效名單」至少等於他記的卡片張數 */
+function countOf(s, p, k) {
+  const v = Math.max(0, +(p.counts || {})[k] || 0);
+  return k === 'valid' ? Math.max(v, cardsIn(s.id, p.userId).length) : v;
+}
+const sesTotal = (s, k) => s.parts.reduce((n, p) => n + countOf(s, p, k), 0);
+const sortSes = list => list.slice().sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start));
+const canEditSes = s => TEAM.me.perms.manage || s.creatorId === TEAM.me.userId;
+
+function urlFor(tab, sub) {
+  const q = new URLSearchParams(); if (DEMO) q.set('demo', '');
+  q.set('t', TEAM.team.id); if (tab !== 'rec') q.set('tab', tab); if (sub) q.set('s', sub);
+  return `${location.pathname}?${q.toString().replace('demo=&', 'demo&')}`;
+}
+
+async function teamFlow(tid, tab, sub, joinCode) {
+  TAB = tab || 'rec'; SUB = sub || '';
+  if (!TEAM || TEAM.team.id !== tid) view(loading());
+  const nav = NAV;
+  let r;
+  try {
+    r = await apiCached('team', { teamId: tid }, fresh => { if (nav === NAV || (TEAM && TEAM.team.id === tid && !busy())) { TEAM = fresh; if (!busy()) renderTeam(true); } });
+  } catch (e) {
+    if (e.message === 'NOT_MEMBER') {
+      if (joinCode) return joinFlow(joinCode);
+      view(`${subbar('我的開展隊')}<div class="panel"><h2>你還不是這個開展隊的隊員</h2><p class="muted">請向負責人索取邀請連結，點連結就能加入。</p></div>`);
+      return;
+    }
+    throw e;
+  }
+  TEAM = r;
+  renderTeam();
+}
+async function reloadTeam(keep = true) {
+  const r = await api('team', { teamId: TEAM.team.id });
+  TEAM = r; renderTeam(keep);
+}
+
+function renderTeam(keepScroll) {
+  syncDrafts();
+  const t = TEAM.team, me = TEAM.me, th = themeOf(t);
+  if (SUB && !sesById(SUB)) SUB = '';
+  document.title = t.title;
+  history.replaceState(null, '', urlFor(TAB, SUB));
+  const myTitle = (TEAM.members.find(m => m.userId === me.userId) || {}).title || '';
+  const body = { rec: renderRec, ses: renderSesSum, all: renderAll, pray: renderPray, mem: renderMembers }[TAB]();
+  view(`<div class="team-wrap" style="${themeVars(th)}">
+    <header class="team-top"><button class="back light" type="button" data-act="home">‹ 我的開展隊</button>
+      <h1>${esc(t.title)}</h1><p>${esc(periodLabel(t.start, t.end))}${t.start || t.end ? '・' : ''}${esc(me.name)}${myTitle ? `（${esc(myTitle)}）` : ''}</p>
+      <button class="help" type="button" data-act="tour" aria-label="使用教學">?</button></header>
+    ${DEMO ? `<p class="demo-note">預覽模式：目前使用範例資料。</p>` : ''}
+    ${body}</div>`, keepScroll);
+  setNav(TAB);
+  if (TAB === 'mem' && TEAM_EDIT) bindTeamForm(async team => { const r = await api('updateTeam', { teamId: t.id, team }); TEAM.team = { ...TEAM.team, ...r.team }; TEAM_EDIT = false; HOME = null; toast('已儲存'); renderTeam(); });
+  maybeStartTour();
+}
+
+/* ================= 開展紀錄：時段列表 ================= */
+function renderRec() {
+  if (SUB) return renderSession(sesById(SUB));
+  const list = sortSes(TEAM.sessions), me = TEAM.me.userId;
+  const groups = [['進行中、今天', list.filter(s => ['進行中', '今天'].includes(sesState(s)))], ['接下來', list.filter(s => sesState(s) === '即將').reverse()], ['已結束', list.filter(s => sesState(s) === '已結束')]];
+  return `<div class="sec-h"><h2>開展時段</h2>${TEAM.me.perms.session ? `<button class="btn send small" type="button" id="new-ses" data-act="newSes">${ICON.plus} 建立時段</button>` : ''}</div>
+    ${list.length ? groups.filter(g => g[1].length).map(([h, l]) => `<h3 class="grp-h">${h}</h3><div class="ses-list">${l.map(s => sesCard(s, me)).join('')}</div>`).join('')
+      : `<div class="empty"><p>還沒有開展時段。</p><p class="muted">${TEAM.me.perms.session ? '按右上角「建立時段」，填時間、地點，大家就能加入一起記錄。' : '等負責人或隊友建立開展時段後，就能加入記錄。'}</p></div>`}`;
+}
+function sesCard(s, me) {
+  const d = parseYmd(s.date), st = sesState(s), joined = !!partOf(s, me), mine = cardsIn(s.id, me).length;
+  return `<button class="ses-card" type="button" data-act="openSes" data-id="${esc(s.id)}">
+    <span class="date"><b>${d ? d.getDate() : ''}</b><small>${d ? `${d.getMonth() + 1}月・${WD[d.getDay()]}` : ''}</small></span>
+    <span class="info"><b>${esc(sesName(s))}</b><small>${esc([timeRange(s), s.title ? s.place : ''].filter(Boolean).join('・'))}</small>
+      <span class="chips-row"><span class="state s-${{ 進行中: 'on', 今天: 'on', 即將: 'soon', 已結束: 'end' }[st] || 'end'}">${st}</span><span class="state">${s.parts.length} 人參加</span>${joined ? `<span class="state mine">已加入${mine ? `・名單 ${mine}` : ''}</span>` : ''}</span></span>
+    <span class="go" aria-hidden="true">›</span></button>`;
+}
+
+/* ================= 建立／修改開展時段 ================= */
+function sesFormFlow(s) {
+  const isNew = !s;
+  s = s || { title: '', date: ymd(now()), start: '', end: '', place: '', items: ITEMS.map(x => x.k), note: '' };
+  NAV++;
+  setNav(TAB);
+  view(`<div class="team-wrap" style="${themeVars(themeOf(TEAM.team))}">${subbar('返回', isNew ? '建立開展時段' : '修改開展時段', 'backRec')}
+    <form class="panel" id="ses-form" autocomplete="off">
+      <label class="field"><span>名稱（選填）</span><input name="title" maxlength="40" value="${esc(s.title)}" placeholder="例如：一中街掃街、社區叩門"></label>
+      <label class="field"><span>日期</span><input type="date" name="date" required value="${esc(s.date)}"></label>
+      <div class="row2"><label class="field"><span>開始</span><input type="time" name="start" value="${esc(s.start)}"></label><label class="field"><span>結束</span><input type="time" name="end" value="${esc(s.end)}"></label></div>
+      <label class="field"><span>地點</span><input name="place" maxlength="80" value="${esc(s.place)}" placeholder="例如：一中街、中興大學、崇德路社區"></label>
+      <div class="field"><span>這個時段要計數的項目</span><div class="checks">${ITEMS.map(x => `<label class="check"><input type="checkbox" name="items" value="${x.k}" ${s.items.includes(x.k) ? 'checked' : ''}><span>${x.label}</span></label>`).join('')}</div></div>
+      <label class="field"><span>備註（選填）</span><textarea name="note" maxlength="300" placeholder="集合地點、分組、要帶的東西…">${esc(s.note)}</textarea></label>
+      <button class="btn send" type="submit">${isNew ? '建立時段' : '儲存'}</button>
+    </form></div>`);
+  const f = $('ses-form');
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const v = n => f.elements[n].value.trim();
+    const items = $$('#ses-form [name=items]:checked').map(x => x.value);
+    if (!items.length) { toast('至少勾選一個計數項目'); return; }
+    const removed = isNew ? [] : s.items.filter(k => !items.includes(k));
+    if (removed.length && !await confirmBox({ title: `移除「${removed.map(k => ITEM[k].label).join('、')}」？`, text: '這個時段將不再記錄、統計這些項目。之後加回來，原本記的數字還在。', ok: '移除' })) return;
+    const data = { title: v('title'), date: v('date'), start: v('start'), end: v('end'), place: v('place'), items, note: v('note') };
+    const btn = f.querySelector('[type=submit]'); btn.disabled = true;
+    try {
+      if (isNew) { const r = await api('createSession', { teamId: TEAM.team.id, session: data }); SUB = r.sessionId; toast('時段建立好了，可以邀請大家加入'); }
+      else { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, session: data }); toast('已儲存'); }
+      TAB = 'rec'; await reloadTeam(false);
+    } catch (err) { toast(err.message); btn.disabled = false; }
+  };
+}
+
+/* ================= 一個開展時段：我的計數＋記名卡片 ================= */
+function renderSession(s) {
+  const me = TEAM.me.userId, part = partOf(s, me), st = sesState(s), editable = canEditSes(s);
+  const head = `<section class="panel ses-head" id="ses-head">
+    <div class="ph-row"><span class="state s-${{ 進行中: 'on', 今天: 'on', 即將: 'soon', 已結束: 'end' }[st] || 'end'}">${st}</span>${tools(`sesinfo:${s.id}`, 'ses-head', `${sesName(s)}-時段`)}</div>
+    <h2 class="ses-title">${esc(sesName(s))}</h2>
+    <p class="ses-when">${esc(sesLabel(s))}</p>
+    ${s.note ? `<p class="ses-note">${esc(s.note)}</p>` : ''}
+    <p class="ses-people"><span>建立：${esc(s.creator)}</span><span>參加（${s.parts.length}）：${s.parts.map(p => esc(p.name)).join('、') || '—'}</span></p>
+    <div class="act-row no-shot">
+      <button class="btn plain small" type="button" data-act="sendSes" data-id="${esc(s.id)}">${ICON.send} 邀請隊友加入</button>
+      <button class="btn plain small" type="button" data-act="toSum" data-id="${esc(s.id)}">時段彙整 ›</button>
+      ${editable ? `<button class="btn plain small" type="button" data-act="editSes" data-id="${esc(s.id)}">修改</button><button class="btn cancel small" type="button" data-act="delSes" data-id="${esc(s.id)}">刪除時段</button>` : ''}
+    </div></section>`;
+  if (!part) return `${subbar('開展紀錄', '', 'backRec')}${head}
+    <div class="join-box"><p>你還沒加入這個時段。加入後就能記錄計數和有效名單。</p><button class="btn send" type="button" id="join-ses" data-act="joinSes" data-id="${esc(s.id)}">加入這個時段</button></div>`;
+  const mine = cardsIn(s.id, me), missing = ITEMS.filter(x => !s.items.includes(x.k));
+  const editing = Object.entries(EDIT).filter(([k, d]) => k.startsWith('new') && d.sessionId === s.id);
+  return `${subbar('開展紀錄', '', 'backRec')}${head}
+    <section class="panel" id="my-rec">
+      <div class="sec-h"><h2>我的計數</h2>${tools(`rec:${s.id}`, 'my-rec', `${sesName(s)}-${TEAM.me.name}`)}</div>
+      <p class="shot-only shot-cap">${esc(TEAM.me.name)}・${esc(sesLabel(s))}</p>
+      <div class="counters" id="counters">${s.items.map(k => counterHtml(s, part, k, editable)).join('')}</div>
+      ${editable && missing.length ? `<div class="add-items no-shot"><span>加回項目：</span>${missing.map(x => `<button class="chip" type="button" data-act="addItem" data-k="${x.k}">+ ${x.label}</button>`).join('')}</div>` : ''}
+      <p class="cnt-state no-shot" id="cnt-state" aria-live="polite">${CNT.msg || '數字會自動儲存'}</p>
+      <div class="sec-h cards-h"><h2>有效名單記名卡片<span class="n">${mine.length}</span></h2></div>
+      <div class="pcards" id="my-cards">${mine.map(c => EDIT[c.id] ? cardEditHtml(c.id, EDIT[c.id]) : cardHtml(c)).join('')}${editing.map(([k, d]) => cardEditHtml(k, d)).join('')}
+        ${!mine.length && !editing.length ? '<p class="muted empty-cards">還沒有記名卡片。遇到願意留資料的人，按下面的按鈕記下來。</p>' : ''}</div>
+      <button class="btn plain add-card no-shot" type="button" id="new-card" data-act="newCard" data-id="${esc(s.id)}">${ICON.plus} 新增記名卡片</button>
+    </section>
+    <p class="leave"><a href="#" data-act="leaveSes" data-id="${esc(s.id)}">退出這個時段</a></p>`;
+}
+function counterHtml(s, part, k, editable) {
+  const x = ITEM[k], v = countOf(s, part, k), cards = k === 'valid' ? cardsIn(s.id, part.userId).length : 0;
+  return `<div class="counter" data-k="${k}">
+    <div class="c-top"><span>${x.label}</span>${editable ? `<button class="c-x no-shot" type="button" data-act="rmItem" data-k="${k}" aria-label="移除${x.label}">×</button>` : ''}</div>
+    <div class="c-row"><button class="c-btn no-shot" type="button" data-act="dec" data-k="${k}" aria-label="${x.label}減一">${ICON.minus}</button>
+      <input class="c-num" inputmode="numeric" pattern="[0-9]*" data-cnt="${k}" value="${v}" aria-label="${x.label}">
+      <button class="c-btn plus no-shot" type="button" data-act="inc" data-k="${k}" aria-label="${x.label}加一">${ICON.plus}</button></div>
+    <small>${k === 'valid' ? `已記名 ${cards} 張` : x.unit}</small></div>`;
+}
+
+/* ---------- 計數自動儲存 ---------- */
+const CNT = { timer: 0, sid: '', msg: '' };
+function setCount(k, val) {
+  const s = sesById(SUB), p = partOf(s, TEAM.me.userId);
+  const cards = k === 'valid' ? cardsIn(s.id, p.userId).length : 0;
+  let v = Math.max(0, Math.min(99999, Math.floor(+val || 0)));
+  if (k === 'valid' && v < cards) { v = cards; toast(`有效名單不會少於已記名的 ${cards} 張`); }
+  p.counts = { ...p.counts, [k]: v };
+  const inp = document.querySelector(`[data-cnt="${k}"]`); if (inp) inp.value = v;
+  CNT.sid = s.id;
+  stateMsg('儲存中…');
+  clearTimeout(CNT.timer);
+  CNT.timer = setTimeout(flushCounts, 700);
+}
+function stateMsg(m) { CNT.msg = m; const el = $('cnt-state'); if (el) el.textContent = m; }
+async function flushCounts() {
+  if (!CNT.timer) return;
+  clearTimeout(CNT.timer); CNT.timer = 0;
+  const s = sesById(CNT.sid); if (!s) return;
+  const p = partOf(s, TEAM.me.userId);
+  try {
+    await api('saveCounts', { teamId: TEAM.team.id, sessionId: s.id, counts: p.counts });
+    const t = now(); stateMsg(`已儲存 ${pad(t.getHours())}:${pad(t.getMinutes())}`);
+    delete CACHE[ckey('team', { teamId: TEAM.team.id })]; saveCache();
+  } catch (e) { stateMsg('沒有儲存成功：' + e.message + '（再按一次數字就會重試）'); }
+}
+addEventListener('pagehide', () => { if (CNT.timer) flushCounts(); });
+
+/* ================= 記名卡片 ================= */
+const blankCard = sid => ({ sessionId: sid, name: '', gender: '', age: '', phone: '', lineId: '', address: '', open: '', photos: [], fu: false, jia: false, pai: false, qu: false, urgent: false, note: '' });
+const cardTags = c => [c.gender, c.age].filter(Boolean).map(x => `<span class="tag">${esc(x)}</span>`).join('') + (c.open ? `<span class="tag open-${c.open}">${esc(openLabel(c.open))}</span>` : '');
+function cardHtml(c, opt = {}) {
+  const s = sesById(c.sessionId) || {}, can = c.canEdit && !opt.readonly;
+  const info = [['手機', c.phone ? `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ''))}">${esc(c.phone)}</a>` : ''], ['LINE ID', esc(c.lineId)], ['地址', esc(c.address)], ['備註', esc(c.note)]].filter(x => x[1]);
+  return `<article class="pcard ${c.urgent ? 'urgent' : ''}" id="card-${esc(c.id)}">
+    <div class="pc-head"><div class="pc-name"><b>${esc(c.name) || '<span class="muted">（未填姓名）</span>'}</b>${c.urgent ? `<span class="urgent-mark">${ICON.star}迫切代禱</span>` : ''}<div class="tags">${cardTags(c)}</div></div>
+      ${tools(`card:${c.id}`, `card-${c.id}`, `${c.name || '記名卡片'}`)}</div>
+    <div class="pc-flags">${FLAGS.map(f => `<button class="flag" type="button" style="--fc:${f.color}" aria-pressed="${!!c[f.k]}" ${can ? `data-act="flag" data-id="${esc(c.id)}" data-k="${f.k}"` : 'disabled'} title="${f.label}">${f.short}</button>`).join('')}
+      <button class="flag star" type="button" aria-pressed="${!!c.urgent}" ${can ? `data-act="flag" data-id="${esc(c.id)}" data-k="urgent"` : 'disabled'}>${ICON.star}<span>迫切代禱</span></button></div>
+    ${info.length ? `<dl class="pc-info">${info.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>` : ''}
+    ${c.hidden ? '<p class="muted small">手機、LINE ID、地址只有記名的人和有權限的人看得到。</p>' : ''}
+    ${c.photos && c.photos.length ? `<div class="pc-photos">${c.photos.map(u => `<img src="${esc(u)}" alt="${esc(c.name)}的照片" loading="lazy" crossorigin="anonymous">`).join('')}</div>` : ''}
+    <div class="pc-foot"><span>開展者 ${esc(c.owner)}${opt.showSes && s.date ? `・${esc(dayLabel(s.date))} ${esc(s.place || '')}` : ''}</span>
+      ${can ? `<span class="no-shot"><button class="link-btn" type="button" data-act="editCard" data-id="${esc(c.id)}">編輯</button><button class="link-btn danger" type="button" data-act="delCard" data-id="${esc(c.id)}">刪除</button></span>` : ''}</div>
+  </article>`;
+}
+function cardEditHtml(key, d) {
+  const isNew = key.startsWith('new');
+  const sel = (f, list, label) => `<label class="field"><span>${label}</span><select class="inp" data-f="${f}"><option value="">—</option>${list.map(o => { const v = o.v || o, l = o.label || o; return `<option value="${esc(v)}" ${d[f] === v ? 'selected' : ''}>${esc(l)}</option>`; }).join('')}</select></label>`;
+  return `<article class="pcard editing" id="card-${esc(key)}" data-key="${esc(key)}">
+    <p class="pc-edit-h">${isNew ? '新的記名卡片' : '編輯記名卡片'}<small>每一欄都可以不填</small></p>
+    <label class="field"><span>姓名</span><input data-f="name" maxlength="30" value="${esc(d.name)}"></label>
+    <div class="row2">${sel('gender', GENDERS, '身分')}${sel('age', AGES, '年齡段')}</div>
+    <div class="row2"><label class="field"><span>手機</span><input data-f="phone" type="tel" inputmode="tel" maxlength="30" value="${esc(d.phone)}"></label>
+      <label class="field"><span>LINE ID</span><input data-f="lineId" maxlength="40" autocapitalize="off" value="${esc(d.lineId)}"></label></div>
+    <label class="field"><span>地址</span><input data-f="address" maxlength="120" value="${esc(d.address)}"></label>
+    ${sel('open', OPENS, '敞開程度')}
+    <div class="field"><span>照片</span><div class="photos">${(d.photos || []).map((u, i) => `<div class="ph"><img src="${esc(u)}" alt=""><button type="button" data-act="rmPhoto" data-key="${esc(key)}" data-i="${i}" aria-label="移除照片">×</button></div>`).join('')}
+      ${(d.photos || []).length < 3 ? `<label class="ph add" aria-label="上傳照片">${ICON.image}<span>上傳</span><input type="file" accept="image/*" data-photo="${esc(key)}" hidden></label>` : ''}</div><p class="help" id="ph-st-${esc(key)}"></p></div>
+    <div class="field"><span>目前狀態（可複選，勾選後會出現在代禱牆）</span><div class="pc-flags">${FLAGS.map(f => `<button class="flag" type="button" style="--fc:${f.color}" aria-pressed="${!!d[f.k]}" data-act="flagDraft" data-key="${esc(key)}" data-k="${f.k}">${f.label}</button>`).join('')}</div></div>
+    <div class="pc-flags"><button class="flag star" type="button" aria-pressed="${!!d.urgent}" data-act="flagDraft" data-key="${esc(key)}" data-k="urgent">${ICON.star}<span>迫切代禱（名字在代禱牆上會特別顯眼）</span></button></div>
+    <label class="field"><span>備註（選填）</span><textarea data-f="note" maxlength="300" rows="2">${esc(d.note)}</textarea></label>
+    <div class="btn-row"><button class="btn plain" type="button" data-act="cancelCard" data-key="${esc(key)}">取消</button><button class="btn send" type="button" data-act="saveCard" data-key="${esc(key)}">儲存</button></div>
+  </article>`;
+}
+/** 把輸入框的內容收回草稿（重畫畫面前呼叫，才不會弄丟正在打的字） */
+function syncDrafts() {
+  $$('.pcard.editing').forEach(el => {
+    const d = EDIT[el.dataset.key]; if (!d) return;
+    el.querySelectorAll('[data-f]').forEach(i => { d[i.dataset.f] = i.value.trim(); });
+  });
+}
+function rerenderCard(key) {
+  syncDrafts();
+  const el = $(`card-${key}`); if (!el) return renderTeam(true);
+  const c = TEAM.cards.find(x => x.id === key);
+  el.outerHTML = EDIT[key] ? cardEditHtml(key, EDIT[key]) : c ? cardHtml(c, { showSes: TAB !== 'rec' }) : '';
+}
+async function uploadPhoto(inp) {
+  const key = inp.dataset.photo, file = (inp.files || [])[0], d = EDIT[key];
+  inp.value = '';
+  if (!file || !d) return;
+  const st = $(`ph-st-${key}`); if (st) st.textContent = '上傳中…';
+  try {
+    const dataUrl = await shrinkImage(file, 1200, 0.82);
+    syncDrafts();
+    d.photos = [...(d.photos || []), (await api('uploadImage', { data: dataUrl, mime: 'image/jpeg' })).url].slice(0, 3);
+    rerenderCard(key);
+  } catch (e) { if (st) st.textContent = ''; toast('上傳失敗：' + e.message); }
+}
+function shrinkImage(file, maxW, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.naturalWidth);
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => reject(new Error('無法讀取這張圖片'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+async function saveCardDraft(key, btn) {
+  syncDrafts();
+  const d = EDIT[key];
+  const card = { ...d, id: key.startsWith('new') ? '' : key };
+  const filled = ['name', 'gender', 'age', 'phone', 'lineId', 'address', 'open', 'note'].some(f => card[f]) || (card.photos || []).length;
+  if (!filled) { toast('至少填一個欄位再儲存'); return; }
+  btn.disabled = true; btn.textContent = '儲存中…';
+  try {
+    const r = await api('saveCard', { teamId: TEAM.team.id, card });
+    const i = TEAM.cards.findIndex(x => x.id === r.card.id);
+    if (i >= 0) TEAM.cards[i] = { ...TEAM.cards[i], ...r.card }; else TEAM.cards.push(r.card);
+    const s = sesById(r.card.sessionId);
+    if (s && !partOf(s, TEAM.me.userId)) s.parts.push({ userId: TEAM.me.userId, name: TEAM.me.name, counts: {} });
+    delete EDIT[key];
+    toast('已儲存記名卡片');
+    renderTeam(true);
+  } catch (e) { toast(e.message); btn.disabled = false; btn.textContent = '儲存'; }
+}
+/* ================= 彙整共用：名單表格（點一列展開完整記名卡片） ================= */
+const OPEN_ROWS = new Set();
+let LIST_FILTER = 'all';
+function listTable(cards, id, opt = {}) {
+  if (!cards.length) return '<p class="muted empty-cards">還沒有有效名單。</p>';
+  return `<div class="tbl-wrap"><table class="tbl names-tbl" id="${id}"><thead><tr><th>#</th><th>姓名</th><th>身分</th><th>年齡段</th><th>敞開</th><th>開展者</th></tr></thead><tbody>
+    ${cards.map((c, i) => `<tr class="row ${c.urgent ? 'urgent' : ''}" data-act="toggleRow" data-id="${esc(c.id)}" aria-expanded="${OPEN_ROWS.has(c.id)}" tabindex="0">
+      <td>${i + 1}</td><td class="nm">${c.urgent ? `<span class="star-s">${ICON.star}</span>` : ''}${esc(c.name) || '—'}${FLAGS.filter(f => c[f.k]).map(f => `<i class="fl" style="--fc:${f.color}">${f.short}</i>`).join('')}</td>
+      <td>${esc(c.gender) || '—'}</td><td>${esc(c.age) || '—'}</td><td>${c.open ? `<span class="tag open-${c.open}">${c.open}</span>` : '—'}</td><td>${esc(c.owner)}</td></tr>
+      ${OPEN_ROWS.has(c.id) ? `<tr class="detail"><td colspan="6">${cardHtml(c, { showSes: opt.showSes })}</td></tr>` : ''}`).join('')}
+  </tbody></table></div><p class="tbl-hint no-shot">點一列可以展開完整的記名卡片。</p>`;
+}
+/** 計數表：每一列一個人（或一個時段），最後一列合計 */
+function countTable(rows, items, firstCol) {
+  const tot = items.map(k => rows.reduce((n, r) => n + (r.v[k] || 0), 0));
+  return `<div class="tbl-wrap"><table class="tbl num-tbl"><thead><tr><th>${firstCol}</th>${items.map(k => `<th>${ITEM[k].short}</th>`).join('')}</tr></thead><tbody>
+    ${rows.map(r => `<tr><td class="nm">${r.label}</td>${items.map(k => `<td>${r.v[k] == null ? '<span class="muted">–</span>' : r.v[k]}</td>`).join('')}</tr>`).join('')}
+    </tbody><tfoot><tr><td>合計</td>${tot.map(n => `<td>${n}</td>`).join('')}</tr></tfoot></table></div>`;
+}
+
+/* ================= 時段彙整 ================= */
+function renderSesSum() {
+  const list = sortSes(TEAM.sessions);
+  if (!list.length) return `<div class="empty"><p>還沒有開展時段。</p><p class="muted">在「開展紀錄」建立時段、記錄之後，這裡會自動彙整。</p></div>`;
+  const s = sesById(SUB) || list.find(x => sesState(x) !== '即將') || list[0];
+  SUB = s.id;
+  const cards = sortCards(cardsIn(s.id));
+  return `<label class="field ses-pick"><span>選擇開展時段</span><select class="inp" id="sum-pick">${list.map(x => `<option value="${esc(x.id)}" ${x.id === s.id ? 'selected' : ''}>${esc(dayLabel(x.date))} ${esc(sesName(x))}（${sesState(x)}）</option>`).join('')}</select></label>
+    <section class="panel sum" id="sum-ses">
+      <div class="sec-h stack"><div><h2>${esc(sesName(s))}</h2><p class="muted small">${esc(sesLabel(s))}・${s.parts.length} 人參加</p></div>${tools(`sum:${s.id}`, 'sum-ses', `${sesName(s)}-時段彙整`, `<button type="button" class="tool" data-act="sendSum" data-id="${esc(s.id)}" aria-label="發到 LINE">${ICON.send}<span>LINE</span></button>`)}</div>
+      <div class="tiles">${s.items.map(k => `<div class="tile"><b>${sesTotal(s, k)}</b><small>${ITEM[k].label}</small></div>`).join('')}</div>
+      <h3 class="tbl-h">計數彙整</h3>
+      ${s.parts.length ? countTable(s.parts.map(p => ({ label: esc(p.name), v: Object.fromEntries(s.items.map(k => [k, countOf(s, p, k)])) })), s.items, '開展者') : '<p class="muted">還沒有人加入。</p>'}
+      <h3 class="tbl-h">名單彙整<span class="n">${cards.length}</span></h3>
+      ${listTable(cards, 'tbl-ses')}
+    </section>`;
+}
+/** 名單排序：迫切的在前，再依敞開程度 A→B→C */
+const sortCards = list => list.slice().sort((a, b) => (b.urgent - a.urgent) || ((a.open || 'Z').localeCompare(b.open || 'Z')));
+
+/* ================= 累積彙整 ================= */
+function renderAll() {
+  const ss = sortSes(TEAM.sessions).filter(s => sesState(s) !== '即將' || s.parts.some(p => Object.keys(p.counts || {}).length));
+  const used = ITEMS.map(x => x.k).filter(k => ss.some(s => s.items.includes(k)));
+  const tot = k => ss.reduce((n, s) => n + (s.items.includes(k) ? sesTotal(s, k) : 0), 0);
+  const people = {};
+  ss.forEach(s => s.parts.forEach(p => {
+    const r = people[p.userId] || (people[p.userId] = { label: esc(p.name), n: 0, v: {} });
+    r.n++;
+    s.items.forEach(k => { r.v[k] = (r.v[k] || 0) + countOf(s, p, k); });
+  }));
+  const all = sortCards(TEAM.cards);
+  const filters = [['all', '全部', all.length], ['A', 'A 非常敞開', all.filter(c => c.open === 'A').length], ['B', 'B 普通', all.filter(c => c.open === 'B').length], ['C', 'C 較無興趣', all.filter(c => c.open === 'C').length], ['urgent', '迫切代禱', all.filter(c => c.urgent).length]];
+  const shown = all.filter(c => LIST_FILTER === 'all' || (LIST_FILTER === 'urgent' ? c.urgent : c.open === LIST_FILTER));
+  const t = TEAM.team;
+  return `<section class="panel sum" id="sum-all">
+      <div class="sec-h stack"><div><h2>累積到目前</h2><p class="muted small">${esc(periodLabel(t.start, t.end))}${t.start || t.end ? '・' : ''}${ss.length} 個時段・${Object.values(people).reduce((n, r) => n + r.n, 0)} 人次</p></div>${tools('all', 'sum-all', `${t.title}-累積彙整`)}</div>
+      <div class="tiles">${used.map(k => `<div class="tile"><b>${tot(k)}</b><small>${ITEM[k].label}</small></div>`).join('') || '<p class="muted">還沒有紀錄。</p>'}</div>
+      ${ss.length ? `<h3 class="tbl-h">各時段計數</h3>${countTable(ss.map(s => ({ label: `${esc(dayLabel(s.date))}<small>${esc(sesName(s))}</small>`, v: Object.fromEntries(used.map(k => [k, s.items.includes(k) ? sesTotal(s, k) : null])) })), used, '時段')}
+      <h3 class="tbl-h">各隊員計數</h3>${countTable(Object.values(people).map(r => ({ label: `${r.label}<small>${r.n} 次</small>`, v: r.v })), used, '隊員')}` : ''}
+    </section>
+    <section class="panel sum" id="sum-list">
+      <div class="sec-h"><h2>累積名單<span class="n">${all.length}</span></h2>${tools('list', 'sum-list', `${t.title}-累積名單`)}</div>
+      <div class="chips no-shot">${filters.map(([k, l, n]) => `<button class="chip ${LIST_FILTER === k ? 'on' : ''}" type="button" data-act="listFilter" data-k="${k}">${l} ${n}</button>`).join('')}</div>
+      ${LIST_FILTER !== 'all' ? `<p class="shot-only shot-cap">篩選：${filters.find(f => f[0] === LIST_FILTER)[1]}</p>` : ''}
+      ${listTable(shown, 'tbl-all', { showSes: true })}
+    </section>`;
+}
+
+/* ================= 代禱牆 ================= */
+function prayNames(k) { return sortCards(TEAM.cards.filter(c => c[k])).sort((a, b) => b.urgent - a.urgent); }
+function renderPray() {
+  const urgent = TEAM.cards.filter(c => c.urgent);
+  return `<section class="pray-wall" id="pray-wall">
+    <div class="sec-h"><div><h2>代禱牆</h2><p class="muted small">${esc(TEAM.team.title)}</p></div>${tools('pray', 'pray-wall', `${TEAM.team.title}-代禱牆`)}</div>
+    ${urgent.length ? `<p class="urgent-sum">${ICON.star} 迫切代禱 ${urgent.length} 人：${urgent.map(c => esc(c.name || '（未填姓名）')).join('、')}</p>` : ''}
+    <div class="blocks">${FLAGS.map(f => { const l = prayNames(f.k); return `<div class="pblock" id="pb-${f.k}" style="--fc:${f.color}">
+      <div class="pb-h"><span class="pb-ch">${f.short}</span><b>${f.label.slice(2, -1)}</b><span class="n">${l.length}</span>${tools(`pray:${f.k}`, `pb-${f.k}`, `代禱牆-${f.label}`)}</div>
+      <div class="pb-names">${l.map(c => `<span class="pn ${c.urgent ? 'hot' : ''}" data-act="prayCard" data-id="${esc(c.id)}">${c.urgent ? ICON.star : ''}${esc(c.name || '（未填姓名）')}<small>（${esc(c.owner)}）</small></span>`).join('') || '<span class="muted small">還沒有人</span>'}</div></div>`; }).join('')}</div>
+    <p class="muted small no-shot pray-tip">在記名卡片上勾選「福、家、排、區」，名字就會出現在相應的區塊；勾「迫切代禱」的名字會特別顯眼。點名字可以看記名卡片。</p>
+  </section>`;
+}
+
+/* ================= 一鍵複製的文字 ================= */
+const line = '────────';
+function cardText(c, withSes = true) {
+  const s = sesById(c.sessionId) || {};
+  const L = [`【${c.name || '（未填姓名）'}】${c.urgent ? '★迫切代禱' : ''}`];
+  const tag = [c.gender, c.age, c.open ? openLabel(c.open) : ''].filter(Boolean).join('／'); if (tag) L.push(tag);
+  if (c.phone) L.push(`手機：${c.phone}`);
+  if (c.lineId) L.push(`LINE ID：${c.lineId}`);
+  if (c.address) L.push(`地址：${c.address}`);
+  const fl = FLAGS.filter(f => c[f.k]).map(f => f.label); if (fl.length) L.push(`狀態：${fl.join('、')}`);
+  if (c.note) L.push(`備註：${c.note}`);
+  L.push(`開展者：${c.owner}${withSes && s.date ? `（${dayLabel(s.date)} ${s.place || ''}）`.replace(' ）', '）') : ''}`);
+  return L.join('\n');
+}
+const countLine = (s, get) => s.items.map(k => `${ITEM[k].label} ${get(k)}`).join('｜');
+const cardBrief = (c, i) => `${i + 1}. ${c.name || '（未填姓名）'}${c.urgent ? '★' : ''}（${[c.gender, c.age, c.open].filter(Boolean).join('／') || '—'}）${c.owner}`;
+const COPY = {
+  card: id => cardText(TEAM.cards.find(c => c.id === id)),
+  sesinfo: id => { const s = sesById(id); return [`【開展時段】${sesName(s)}`, sesLabel(s), s.note, `建立：${s.creator}`, `參加：${s.parts.map(p => p.name).join('、') || '—'}`, `加入：${liffUrl(`t=${encodeURIComponent(TEAM.team.id)}&s=${encodeURIComponent(s.id)}`)}`].filter(Boolean).join('\n'); },
+  rec: id => {
+    const s = sesById(id), p = partOf(s, TEAM.me.userId), cards = cardsIn(id, TEAM.me.userId);
+    return [`【開展紀錄】${sesName(s)}`, sesLabel(s), `開展者：${TEAM.me.name}`, countLine(s, k => countOf(s, p, k)), ...(cards.length ? [line, '有效名單：', ...cards.map(cardBrief)] : [])].join('\n');
+  },
+  sum: id => {
+    const s = sesById(id), cards = sortCards(cardsIn(id));
+    return [`【時段彙整】${sesName(s)}`, sesLabel(s), `參加 ${s.parts.length} 人`, `合計：${countLine(s, k => sesTotal(s, k))}`, line,
+      ...s.parts.map(p => `${p.name}：${countLine(s, k => countOf(s, p, k))}`), line, `名單（${cards.length}）：`, ...cards.map(cardBrief)].join('\n');
+  },
+  all: () => {
+    const ss = sortSes(TEAM.sessions).filter(s => sesState(s) !== '即將' || s.parts.some(p => Object.keys(p.counts || {}).length));
+    const used = ITEMS.filter(x => ss.some(s => s.items.includes(x.k)));
+    return [`【累積彙整】${TEAM.team.title}`, `${ss.length} 個時段`, used.map(x => `${x.label} ${ss.reduce((n, s) => n + (s.items.includes(x.k) ? sesTotal(s, x.k) : 0), 0)}`).join('｜'), line,
+      ...ss.map(s => `${dayLabel(s.date)} ${sesName(s)}：${countLine(s, k => sesTotal(s, k))}`)].join('\n');
+  },
+  list: () => {
+    const all = sortCards(TEAM.cards).filter(c => LIST_FILTER === 'all' || (LIST_FILTER === 'urgent' ? c.urgent : c.open === LIST_FILTER));
+    return [`【累積名單】${TEAM.team.title}（${all.length} 人）`, ...all.map(cardBrief)].join('\n');
+  },
+  pray: k => {
+    const block = f => { const l = prayNames(f.k); return [`【${f.label}】${l.length} 人`, ...l.map(c => `${c.urgent ? '★' : '・'}${c.name || '（未填姓名）'}（${c.owner}）`)].join('\n'); };
+    if (k) return block(FLAGS.find(f => f.k === k));
+    return [`【代禱牆】${TEAM.team.title}`, ...FLAGS.map(block)].join('\n\n') + '\n\n★＝迫切代禱';
+  },
+};
+
+/* ================= 發到 LINE 的圖卡（Flex Message） ================= */
+const flexInfo = (k, v, th) => ({ type: 'box', layout: 'baseline', spacing: 'md', contents: [
+  { type: 'text', text: String(k), color: '#7A7A72', size: 'sm', flex: 0 },
+  { type: 'text', text: String(v === '' || v == null ? '—' : v), wrap: true, color: '#22302A', size: 'sm', flex: 1, weight: 'bold' } ] });
+const flexBtn = (label, uri, th) => ({ type: 'box', layout: 'vertical', paddingAll: '16px', contents: [
+  { type: 'box', layout: 'horizontal', spacing: 'md', contents: [
+    { type: 'box', layout: 'vertical', width: '6px', cornerRadius: '3px', backgroundColor: th.notch, contents: [] },
+    { type: 'button', style: 'primary', color: th.btn, height: 'sm', flex: 1, action: { type: 'uri', label: String(label).slice(0, 20), uri } } ] }] });
+const bubble = (th, body, footer) => ({ type: 'bubble', size: 'mega', styles: { body: { backgroundColor: th.paper }, footer: { backgroundColor: th.paper } },
+  body: { type: 'box', layout: 'vertical', paddingAll: '20px', contents: body }, footer });
+function inviteFlex(t) {
+  const th = themeOf(t);
+  const body = [{ type: 'text', text: '邀請你加入開展隊', size: 'xs', color: th.btn, weight: 'bold' },
+    { type: 'text', text: t.title, weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+    { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: [flexInfo('期間', periodLabel(t.start, t.end), th), flexInfo('負責人', t.owner, th)] }];
+  if (t.desc) body.push({ type: 'text', text: t.desc.slice(0, 300), size: 'sm', color: '#66675F', wrap: true, margin: 'lg' });
+  return { type: 'flex', altText: `邀請你加入「${t.title}」`, contents: bubble(th, body, flexBtn('加入開展隊', liffUrl(`join=${t.code}`), th)) };
+}
+function sesFlex(s) {
+  const t = TEAM.team, th = themeOf(t);
+  const body = [{ type: 'text', text: `${t.title}・開展時段`, size: 'xs', color: th.btn, weight: 'bold', wrap: true },
+    { type: 'text', text: sesName(s), weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+    { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: [flexInfo('日期', dayLabel(s.date), th), flexInfo('時間', timeRange(s), th), flexInfo('地點', s.place, th), flexInfo('參加', `${s.parts.length} 人`, th)] }];
+  if (s.note) body.push({ type: 'text', text: s.note.slice(0, 300), size: 'sm', color: '#66675F', wrap: true, margin: 'lg' });
+  const q = `t=${encodeURIComponent(t.id)}&s=${encodeURIComponent(s.id)}${t.open && t.code ? `&j=${t.code}` : ''}`;
+  return { type: 'flex', altText: `一起來開展：${sesLabel(s)}`, contents: bubble(th, body, flexBtn('加入這個時段', liffUrl(q), th)) };
+}
+function sumFlex(s) {
+  const t = TEAM.team, th = themeOf(t), cards = sortCards(cardsIn(s.id));
+  const body = [{ type: 'text', text: `${t.title}・時段彙整`, size: 'xs', color: th.btn, weight: 'bold', wrap: true },
+    { type: 'text', text: sesName(s), weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+    { type: 'text', text: `${sesLabel(s)}・${s.parts.length} 人參加`, size: 'xs', color: '#66675F', wrap: true, margin: 'sm' },
+    { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: s.items.map(k => flexInfo(ITEM[k].label, sesTotal(s, k), th)) }];
+  if (cards.length) {
+    body.push({ type: 'separator', margin: 'lg' }, { type: 'text', text: `有效名單（${cards.length}）`, size: 'sm', weight: 'bold', color: '#22302A', margin: 'lg' });
+    body.push({ type: 'text', text: cards.slice(0, 40).map((c, i) => `${i + 1}. ${c.name || '—'}${c.urgent ? '★' : ''}（${[c.gender, c.age, c.open].filter(Boolean).join('／') || '—'}）${c.owner}`).join('\n'), size: 'sm', color: '#22302A', wrap: true, margin: 'sm' });
+  }
+  return { type: 'flex', altText: `時段彙整：${sesName(s)} ${dayLabel(s.date)}`, contents: bubble(th, body, flexBtn('看完整彙整', liffUrl(`t=${encodeURIComponent(t.id)}&tab=ses&s=${encodeURIComponent(s.id)}`), th)) };
+}
+/* ================= 隊員：邀請、職稱、權限、開展隊設定 ================= */
+let MEM_EDIT = '';   // 正在設定的隊員 userId
+let TEAM_EDIT = false;
+const permBadges = p => p.owner ? '<span class="tag gold">負責人</span>' : PERMS.filter(x => p[x.k] && x.k !== 'session').map(x => `<span class="tag">${{ manage: '管理', contacts: '看聯絡資料', editAll: '編輯所有卡片' }[x.k]}</span>`).join('') + (p.session ? '' : '<span class="tag muted-tag">不能建時段</span>');
+function renderMembers() {
+  const t = TEAM.team, me = TEAM.me, can = me.perms.manage;
+  if (TEAM_EDIT && can) return `${subbar('隊員', '開展隊設定', 'closeTeamEdit')}${teamForm(t, false)}
+    ${me.perms.owner ? `<div class="danger-zone"><p>刪除開展隊會一併刪除所有時段、計數和名單，無法復原。</p><button class="btn cancel" type="button" data-act="delTeam">刪除開展隊</button></div>` : ''}`;
+  const stats = uid => { const n = TEAM.sessions.filter(s => partOf(s, uid)).length, c = TEAM.cards.filter(x => x.ownerId === uid).length; return `${n} 個時段・${c} 張名單`; };
+  const members = TEAM.members.slice().sort((a, b) => (b.perms.owner - a.perms.owner) || (b.perms.manage - a.perms.manage));
+  return `<section class="panel invite" id="invite">
+      <h2>邀請隊員</h2>
+      ${t.code && t.open ? `<p class="muted small">把邀請連結發到 LINE 群組，大家點了就能用 LINE 登入加入。</p>
+        <div class="invite-link"><code>${esc(liffUrl(`join=${t.code}`))}</code></div>
+        <div class="btn-row"><button class="btn send" type="button" data-act="sendInvite">${ICON.send} 發到 LINE</button><button class="btn plain" type="button" data-act="copyInvite">${ICON.copy} 複製連結</button></div>
+        ${can ? `<p class="small"><a href="#" data-act="resetInvite">重設邀請連結</a>（舊連結會失效）</p>` : ''}`
+      : `<p class="muted">${t.open ? '只有負責人和管理者可以發邀請連結。' : '目前不開放加入。'}${can ? '可以在「開展隊設定」打開。' : ''}</p>`}
+    </section>
+    <div class="sec-h"><h2>隊員<span class="n">${TEAM.members.length}</span></h2>${tools('members', 'mem-list', `${t.title}-隊員`, can ? `<button class="btn plain small" type="button" data-act="teamEdit">開展隊設定</button>` : '')}</div>
+    <ul class="members" id="mem-list">${members.map(m => `<li>
+      <div class="line1"><span class="nm">${esc(m.name)}${m.userId === me.userId ? '<small>（我）</small>' : ''}</span><span class="ttl">${esc(m.title || '隊員')}</span></div>
+      <div class="line2"><span class="badges">${permBadges(m.perms)}</span><span class="muted small">${stats(m.userId)}</span></div>
+      ${can && MEM_EDIT !== m.userId ? `<button class="link-btn no-shot" type="button" data-act="memEdit" data-id="${esc(m.userId)}">設定職稱與權限</button>` : ''}
+      ${MEM_EDIT === m.userId ? memberEditor(m) : ''}</li>`).join('')}</ul>
+    <p class="muted small perm-help">權限說明：${PERMS.map(p => `<b>${p.label}</b>＝${p.help}`).join('；')}。每個人都可以記錄自己的計數和名單。</p>
+    ${me.perms.owner && me.member ? '' : `<p class="leave"><a href="#" data-act="leaveTeam">退出這個開展隊</a></p>`}`;
+}
+function memberEditor(m) {
+  const owner = m.perms.owner;
+  return `<div class="member-edit no-shot" id="mem-edit">
+    <label class="field"><span>職稱</span><input id="me-title" maxlength="12" value="${esc(m.title)}"></label>
+    <div class="chips">${TITLE_CHIPS.map(x => `<button class="chip" type="button" data-act="titleChip" data-v="${x}">${x}</button>`).join('')}</div>
+    ${owner ? '<p class="muted small">建立開展隊的人擁有所有權限。</p>' : `<div class="perm-presets"><span>快速套用：</span><button class="chip" type="button" data-act="permPreset" data-v="admin">管理者</button><button class="chip" type="button" data-act="permPreset" data-v="member">一般隊員</button></div>
+    <div class="checks">${PERMS.map(p => `<label class="check"><input type="checkbox" data-perm="${p.k}" ${m.perms[p.k] ? 'checked' : ''}><span>${p.label}<small>${p.help}</small></span></label>`).join('')}</div>`}
+    <div class="btn-row"><button class="btn plain" type="button" data-act="memCancel">取消</button><button class="btn send" type="button" data-act="memSave" data-id="${esc(m.userId)}">儲存</button></div>
+    ${owner || m.userId === TEAM.me.userId ? '' : `<button class="link-btn danger" type="button" data-act="memRemove" data-id="${esc(m.userId)}">把 ${esc(m.name)} 移出開展隊</button>`}
+  </div>`;
+}
+COPY.members = () => [`【${TEAM.team.title}】隊員 ${TEAM.members.length} 人`, ...TEAM.members.map((m, i) => `${i + 1}. ${m.name}（${m.title || '隊員'}）`)].join('\n');
+/* ================= 所有按鈕的動作（用 data-act 統一處理） ================= */
+const ACTS = {
+  home: () => { flushCounts(); MEM_EDIT = ''; TEAM_EDIT = false; homeFlow(); },
+  openTeam: b => teamFlow(b.dataset.id, 'rec', ''),
+  newTeam: () => newTeamFlow(),
+  mydata: () => myDataFlow(),
+  install: () => startInstall(),
+  tour: () => startTour(TOUR_STEPS.filter(s => s.where === whereNow())),
+  tab: b => { flushCounts(); syncDrafts(); TAB = b.dataset.k; if (TAB !== 'ses') SUB = TAB === 'rec' ? '' : SUB; MEM_EDIT = ''; TEAM_EDIT = false; renderTeam(); },
+  backRec: () => { flushCounts(); TAB = 'rec'; SUB = ''; renderTeam(); },
+  openSes: b => { TAB = 'rec'; SUB = b.dataset.id; renderTeam(); },
+  toSum: b => { flushCounts(); TAB = 'ses'; SUB = b.dataset.id; renderTeam(); },
+  newSes: () => sesFormFlow(null),
+  editSes: b => sesFormFlow(sesById(b.dataset.id)),
+  delSes: async b => {
+    const s = sesById(b.dataset.id), n = cardsIn(s.id).length;
+    if (!await confirmBox({ title: `刪除「${sesName(s)}」？`, text: `這個時段所有人的計數${n ? `和 ${n} 張記名卡片` : ''}都會一起刪除，無法復原。`, ok: '刪除時段' })) return;
+    try { await api('deleteSession', { teamId: TEAM.team.id, sessionId: s.id }); SUB = ''; toast('已刪除時段'); await reloadTeam(false); } catch (e) { toast(e.message); }
+  },
+  joinSes: async b => {
+    b.disabled = true;
+    try { await api('joinSession', { teamId: TEAM.team.id, sessionId: b.dataset.id }); const s = sesById(b.dataset.id); s.parts.push({ userId: TEAM.me.userId, name: TEAM.me.name, counts: {} }); toast('已加入，開始記錄吧'); renderTeam(true); }
+    catch (e) { toast(e.message); b.disabled = false; }
+  },
+  leaveSes: async b => {
+    if (cardsIn(b.dataset.id, TEAM.me.userId).length) { toast('你在這個時段還有記名卡片，請先刪除卡片再退出'); return; }
+    if (!await confirmBox({ title: '退出這個時段？', text: '你在這個時段記的計數會刪除。', ok: '退出' })) return;
+    try { CNT.timer && clearTimeout(CNT.timer); CNT.timer = 0; await api('leaveSession', { teamId: TEAM.team.id, sessionId: b.dataset.id }); SUB = ''; await reloadTeam(false); } catch (e) { toast(e.message); }
+  },
+  sendSes: b => pickAndSend(sesFlex(sesById(b.dataset.id)), '已發出邀請'),
+  sendSum: b => pickAndSend(sumFlex(sesById(b.dataset.id)), '已發到 LINE'),
+  inc: b => { const k = b.dataset.k, s = sesById(SUB); setCount(k, countOf(s, partOf(s, TEAM.me.userId), k) + 1); },
+  dec: b => { const k = b.dataset.k, s = sesById(SUB); setCount(k, countOf(s, partOf(s, TEAM.me.userId), k) - 1); },
+  rmItem: async b => {
+    const s = sesById(SUB), k = b.dataset.k;
+    if (s.items.length <= 1) { toast('至少要留一個計數項目'); return; }
+    if (!await confirmBox({ title: `從這個時段移除「${ITEM[k].label}」？`, text: '大家都不會再看到、統計這個項目。之後加回來，原本記的數字還在。', ok: '移除' })) return;
+    await saveItems(s, s.items.filter(x => x !== k));
+  },
+  addItem: b => { const s = sesById(SUB); saveItems(s, ITEMS.map(x => x.k).filter(k => s.items.includes(k) || k === b.dataset.k)); },
+  newCard: b => { syncDrafts(); const key = 'new' + (++NEWN); EDIT[key] = blankCard(b.dataset.id); renderTeam(true); const el = $(`card-${key}`); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.querySelector('input').focus({ preventScroll: true }); } },
+  editCard: b => { syncDrafts(); const c = TEAM.cards.find(x => x.id === b.dataset.id); EDIT[c.id] = JSON.parse(JSON.stringify(c)); rerenderCard(c.id); },
+  cancelCard: b => { delete EDIT[b.dataset.key]; b.dataset.key.startsWith('new') ? ($(`card-${b.dataset.key}`) || {}).remove?.() : rerenderCard(b.dataset.key); },
+  saveCard: b => saveCardDraft(b.dataset.key, b),
+  delCard: async b => {
+    const c = TEAM.cards.find(x => x.id === b.dataset.id);
+    if (!await confirmBox({ title: `刪除「${c.name || '這張記名卡片'}」？`, text: '刪除後無法復原，代禱牆上的名字也會一起移除。', ok: '刪除' })) return;
+    try { await api('deleteCard', { teamId: TEAM.team.id, cardId: c.id }); TEAM.cards = TEAM.cards.filter(x => x.id !== c.id); toast('已刪除'); renderTeam(true); } catch (e) { toast(e.message); }
+  },
+  flag: async b => {
+    const c = TEAM.cards.find(x => x.id === b.dataset.id), k = b.dataset.k, old = !!c[k];
+    c[k] = !old; rerenderCard(c.id);
+    if (TAB !== 'rec') renderTeam(true);
+    try { await api('setCardFlags', { teamId: TEAM.team.id, cardId: c.id, flags: { [k]: !old } }); }
+    catch (e) { c[k] = old; toast(e.message); renderTeam(true); }
+  },
+  flagDraft: b => { syncDrafts(); const d = EDIT[b.dataset.key], k = b.dataset.k; d[k] = !d[k]; b.setAttribute('aria-pressed', d[k]); },
+  rmPhoto: b => { syncDrafts(); EDIT[b.dataset.key].photos.splice(+b.dataset.i, 1); rerenderCard(b.dataset.key); },
+  toggleRow: b => { const id = b.dataset.id; OPEN_ROWS.has(id) ? OPEN_ROWS.delete(id) : OPEN_ROWS.add(id); renderTeam(true); },
+  listFilter: b => { LIST_FILTER = b.dataset.k; renderTeam(true); },
+  prayCard: b => showCardSheet(b.dataset.id),
+  copy: b => { const [k, arg] = b.dataset.k.split(':'); syncDrafts(); copyText(COPY[k](arg)); },
+  shot: async b => {
+    const el = $(b.dataset.id); if (!el) return;
+    const label = b.querySelector('span'); const old = label.textContent; label.textContent = '產生中…'; b.disabled = true;
+    try { await saveBlob(await shotElement(el, fileName(b.dataset.name)), fileName(b.dataset.name)); }
+    catch (e) { toast('存圖失敗：' + e.message); }
+    finally { label.textContent = old; b.disabled = false; }
+  },
+  // 隊員
+  sendInvite: () => pickAndSend(inviteFlex(TEAM.team), '已發出邀請'),
+  copyInvite: () => copyText(`邀請你加入「${TEAM.team.title}」開展隊，點連結用 LINE 登入就能加入：\n${liffUrl(`join=${TEAM.team.code}`)}`, '已複製邀請連結'),
+  resetInvite: async () => {
+    if (!await confirmBox({ title: '重設邀請連結？', text: '舊的邀請連結會失效，已經加入的隊員不受影響。', ok: '重設' })) return;
+    try { const r = await api('resetInvite', { teamId: TEAM.team.id }); TEAM.team = r.team; toast('已產生新的邀請連結'); renderTeam(true); } catch (e) { toast(e.message); }
+  },
+  teamEdit: () => { TEAM_EDIT = true; renderTeam(); },
+  closeTeamEdit: () => { TEAM_EDIT = false; renderTeam(); },
+  delTeam: async () => {
+    if (!await confirmBox({ title: `刪除「${TEAM.team.title}」？`, text: '所有時段、計數、記名卡片都會刪除，隊員也看不到了。無法復原。', ok: '刪除開展隊' })) return;
+    try { await api('deleteTeam', { teamId: TEAM.team.id }); TEAM = null; HOME = null; TEAM_EDIT = false; toast('已刪除開展隊'); homeFlow(); } catch (e) { toast(e.message); }
+  },
+  leaveTeam: async () => {
+    if (!await confirmBox({ title: '退出這個開展隊？', text: '你記的名單和計數會保留在開展隊裡。之後可以用邀請連結再加入。', ok: '退出' })) return;
+    try { await api('leaveTeam', { teamId: TEAM.team.id }); TEAM = null; HOME = null; homeFlow(); } catch (e) { toast(e.message); }
+  },
+  memEdit: b => { MEM_EDIT = b.dataset.id; renderTeam(true); },
+  memCancel: () => { MEM_EDIT = ''; renderTeam(true); },
+  titleChip: b => { $('me-title').value = b.dataset.v; },
+  permPreset: b => { const admin = b.dataset.v === 'admin'; $$('[data-perm]').forEach(i => { i.checked = admin || i.dataset.perm === 'session'; }); },
+  memSave: async b => {
+    const perms = {}; $$('[data-perm]').forEach(i => { perms[i.dataset.perm] = i.checked; });
+    b.disabled = true;
+    try { const r = await api('setMember', { teamId: TEAM.team.id, userId: b.dataset.id, title: $('me-title').value.trim(), perms: $$('[data-perm]').length ? perms : null }); MEM_EDIT = ''; TEAM = { ...TEAM, ...r }; toast('已儲存'); renderTeam(true); }
+    catch (e) { toast(e.message); b.disabled = false; }
+  },
+  memRemove: async b => {
+    const m = TEAM.members.find(x => x.userId === b.dataset.id);
+    if (!await confirmBox({ title: `把 ${m.name} 移出開展隊？`, text: '他記的名單和計數會保留。之後他可以用邀請連結再加入。', ok: '移出' })) return;
+    try { const r = await api('removeMember', { teamId: TEAM.team.id, userId: m.userId }); MEM_EDIT = ''; TEAM = { ...TEAM, ...r }; renderTeam(true); } catch (e) { toast(e.message); }
+  },
+};
+async function saveItems(s, items) {
+  const old = s.items;
+  s.items = items; renderTeam(true);
+  try { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, session: { ...s, items } }); toast('已更新計數項目'); }
+  catch (e) { s.items = old; toast(e.message); renderTeam(true); }
+}
+/** 代禱牆上點名字：跳出那張記名卡片 */
+function showCardSheet(id) {
+  const c = TEAM.cards.find(x => x.id === id); if (!c) return;
+  const box = document.createElement('div');
+  box.className = 'modal on';
+  box.innerHTML = `<div class="modal-panel wide" style="${themeVars(themeOf(TEAM.team))}">${cardHtml(c, { showSes: true, readonly: true })}<button class="btn plain" type="button" data-close style="margin-top:12px">關閉</button></div>`;
+  document.body.append(box);
+  box.addEventListener('click', e => { if (e.target === box || e.target.closest('[data-close]')) box.remove(); });
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || b.disabled) return;
+  if (b.tagName === 'A' || b.dataset.act === 'toggleRow') e.preventDefault();
+  if (e.target.closest('a[href^="tel:"]')) return;
+  const fn = ACTS[b.dataset.act];
+  if (fn) Promise.resolve(fn(b, e)).catch(err => toast(err.message));
+});
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-act]')) { e.preventDefault(); ACTS.toggleRow(e.target); } });
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.matches('[data-cnt]')) setCount(t.dataset.cnt, t.value);
+  else if (t.matches('[data-photo]')) uploadPhoto(t);
+  else if (t.id === 'sum-pick') { SUB = t.value; renderTeam(true); }
+});
+document.addEventListener('focusin', e => { if (e.target.matches('[data-cnt]')) e.target.select(); });
+
+/* ================= 使用教學（金框導覽） =================
+   之後加功能時：新步驟標上 since: 新版本號，並把 TOUR_VERSION 加 1 */
+const TOUR_KEY = 'outreach.tour';
+const TOUR_VERSION = 1;
+const q1 = sel => document.querySelector(sel);
+const TOUR_STEPS = [
+  { since: 1, where: 'home', target: () => q1('#new-team'), title: '建立開展隊', text: '任何人都能建立開展隊（例如一次福音開展活動），建立的人就是負責人，可以發邀請連結給大家加入。' },
+  { since: 1, where: 'home', target: () => q1('.team-card'), title: '我的開展隊', text: '加入的開展隊都在這裡，點進去就能記錄和看彙整。' },
+  { since: 1, where: 'team', tab: 'rec', target: () => q1('#new-ses') || q1('.ses-card'), title: '開展時段', text: '每次出去開展，先建立一個時段（時間、地點、要計數的項目），其他人點進去就能加入一起記錄。' },
+  { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#counters'), title: '計數器', text: '按＋－記錄接觸人數、叩訪戶數、發單張數…，也可以直接點數字輸入，會自動儲存。' },
+  { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#new-card'), title: '記名卡片', text: '遇到願意留資料的人就新增一張記名卡片，欄位都可以不填；勾「福、家、排、區」和「迫切代禱」，名字會出現在代禱牆。' },
+  { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#my-rec .tools'), title: '一鍵複製、存成圖片', text: '每個頁面和卡片右上角都有「複製」和「存圖」，可以貼到 LINE 或存到手機相簿。' },
+  { since: 1, where: 'team', tab: 'ses', target: () => q1('#sum-ses'), title: '時段彙整', text: '每個時段所有人的計數和名單彙整，點名單的一列可以展開完整的記名卡片。' },
+  { since: 1, where: 'team', tab: 'all', target: () => q1('#sum-all'), title: '累積彙整', text: '整個開展期間累積的計數、每個時段、每位隊員的數字，和所有名單。' },
+  { since: 1, where: 'team', tab: 'pray', target: () => q1('.blocks'), title: '代禱牆', text: '依福（受浸）、家（家聚會）、排（小排）、區（主日）分區，名字後面是接觸的人；迫切代禱的名字最顯眼。' },
+  { since: 1, where: 'team', tab: 'mem', target: () => q1('#invite'), title: '邀請與管理隊員', text: '發邀請連結到 LINE 群組；負責人可以幫每位隊員設定職稱和權限。' },
+];
+/** 首頁和開展隊頁各有一段教學，第一次進去時各看一次 */
+const whereNow = () => TEAM && $app.querySelector('.team-wrap') ? 'team' : 'home';
+const tourSeen = w => { try { return parseInt(localStorage.getItem(`${TOUR_KEY}.${w}`) || '0', 10) || 0; } catch (e) { return TOUR_VERSION; } };
+const markTour = w => { try { localStorage.setItem(`${TOUR_KEY}.${w}`, String(TOUR_VERSION)); } catch (e) {} };
+function maybeStartTour() {
+  if (PARAMS.has('notour') || TOUR) return;
+  const w = whereNow(), seen = tourSeen(w);
+  if (!seen) { if (w === 'home' ? HOME && HOME.teams.length : TAB === 'rec' && !SUB) startTour(TOUR_STEPS.filter(s => s.where === w)); return; }
+  if (seen >= TOUR_VERSION) return;
+  markTour(w);
+  const fresh = TOUR_STEPS.filter(s => s.since > seen && s.where === w);
+  if (fresh.length) notice(`新功能：${fresh.map(s => s.title).join('、')}`, '看介紹', () => startTour(fresh));
+}
+function notice(text, action, fn) {
+  const n = $('notice');
+  $('notice-text').textContent = text; $('notice-go').textContent = action; n.hidden = false;
+  const close = () => { n.hidden = true; };
+  $('notice-go').onclick = () => { close(); fn(); };
+  $('notice-x').onclick = close;
+  setTimeout(close, 15000);
+}
+let TOUR = null;
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function startTour(steps) {
+  if (TOUR || !steps.length) return;
+  markTour(whereNow());
+  const el = document.createElement('div');
+  el.className = 'tour';
+  el.innerHTML = `<div class="tour-catch"></div><div class="tour-hole" aria-hidden="true"></div>
+    <div class="tour-bubble" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-text">
+      <div class="tour-head"><h2 id="tour-title"></h2><span class="tour-count"></span></div><p id="tour-text"></p>
+      <div class="tour-btns"><button type="button" class="tour-skip">跳過</button><button type="button" class="tour-prev">上一步</button><button type="button" class="tour-next">下一步</button></div></div>`;
+  document.body.append(el);
+  TOUR = { el, steps, i: -1, from: { tab: TAB, sub: SUB } };
+  el.querySelector('.tour-catch').addEventListener('click', e => e.stopPropagation());
+  el.querySelector('.tour-skip').onclick = endTour;
+  el.querySelector('.tour-prev').onclick = () => tourGo(TOUR.i - 1, -1);
+  el.querySelector('.tour-next').onclick = () => tourGo(TOUR.i + 1, 1);
+  addEventListener('keydown', tourKey, true);
+  addEventListener('resize', placeTour);
+  addEventListener('scroll', placeTour, true);
+  requestAnimationFrame(() => el.classList.add('on'));
+  tourGo(0, 1);
+}
+function tourKey(e) { if (TOUR && e.key === 'Escape') { e.preventDefault(); endTour(); } }
+async function tourGo(i, dir) {
+  const t = TOUR;
+  if (!t || t.busy || i < 0) return;
+  if (i >= t.steps.length) return endTour();
+  const s = t.steps[i];
+  t.busy = true;
+  if (s.where === 'team' && TEAM) {
+    const wantSub = s.sub ? (SUB && s.tab === 'rec' ? SUB : (sortSes(TEAM.sessions).find(x => partOf(x, TEAM.me.userId)) || {}).id || '') : (s.tab === 'ses' ? SUB : '');
+    if (TAB !== s.tab || (s.tab === 'rec' && SUB !== wantSub)) { TAB = s.tab; SUB = wantSub; renderTeam(); }
+  }
+  let el = null;
+  for (let n = 0; n < 30 && !el; n++) { el = s.target(); if (!el) await sleep(50); }
+  t.busy = false;
+  if (TOUR !== t) return;
+  if (!el) return tourGo(i + dir, dir);
+  t.i = i; t.target = el;
+  el.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+  t.el.querySelector('#tour-title').textContent = s.title;
+  t.el.querySelector('#tour-text').textContent = s.text;
+  t.el.querySelector('.tour-count').textContent = `${i + 1} / ${t.steps.length}`;
+  t.el.querySelector('.tour-prev').disabled = i === 0;
+  t.el.querySelector('.tour-next').textContent = i === t.steps.length - 1 ? '完成' : '下一步';
+  placeTour();
+  await sleep(reducedMotion() ? 0 : 380);
+  placeTour();
+  t.el.querySelector('.tour-next').focus({ preventScroll: true });
+}
+function placeTour() {
+  const t = TOUR; if (!t || !t.target) return;
+  const PAD = 6, GAP = 14, EDGE = 12, r = t.target.getBoundingClientRect();
+  const x = Math.max(r.left - PAD, 4), y = Math.max(r.top - PAD, 4);
+  const w = Math.min(r.right + PAD, innerWidth - 4) - x, h = Math.min(r.bottom + PAD, innerHeight - 4) - y;
+  const hole = t.el.querySelector('.tour-hole');
+  hole.style.width = `${Math.max(0, w)}px`; hole.style.height = `${Math.max(0, h)}px`; hole.style.transform = `translate(${x}px, ${y}px)`;
+  const b = t.el.querySelector('.tour-bubble'), bw = b.offsetWidth, bh = b.offsetHeight;
+  let by;
+  if (innerHeight - (y + h) - GAP - EDGE >= bh) by = y + h + GAP; else if (y - GAP - EDGE >= bh) by = y - GAP - bh; else by = innerHeight - EDGE - bh;
+  const bx = Math.min(Math.max(x + w / 2 - bw / 2, EDGE), innerWidth - EDGE - bw);
+  b.style.transform = `translate(${bx}px, ${Math.max(EDGE, by)}px)`;
+}
+function endTour() {
+  const t = TOUR; if (!t) return;
+  TOUR = null;
+  removeEventListener('keydown', tourKey, true); removeEventListener('resize', placeTour); removeEventListener('scroll', placeTour, true);
+  t.el.classList.remove('on'); setTimeout(() => t.el.remove(), 220);
+  if (TEAM && $app.querySelector('.team-wrap')) { TAB = t.from.tab; SUB = t.from.sub; renderTeam(); }
+}
+
+main();
+</script>
+</body>
+</html>
