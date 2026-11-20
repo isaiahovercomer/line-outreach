@@ -11,6 +11,10 @@ const ACTS = {
   openSes: b => { TAB = 'rec'; SUB = b.dataset.id; renderTeam(); },
   toSum: b => { flushCounts(); TAB = 'ses'; SUB = b.dataset.id; renderTeam(); },
   newSes: () => sesFormFlow(null),
+  addSlot: () => { readSlots(); const last = SLOTS[SLOTS.length - 1], d = parseYmd(last.date) || now(); SLOTS.push({ date: ymd(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)), start: SLOTS[0].start, end: SLOTS[0].end }); drawSlots(); },
+  rmSlot: b => { readSlots(); SLOTS.splice(+b.dataset.i, 1); drawSlots(); },
+  repeat: b => { readSlots(); REPEAT.mode = b.dataset.k; if (REPEAT.mode === 'custom' && !REPEAT.days.length) { const d = parseYmd(SLOTS[0].date); if (d) REPEAT.days = [d.getDay()]; } drawSlots(); },
+  wday: b => { readSlots(); const d = +b.dataset.d; REPEAT.days = REPEAT.days.includes(d) ? REPEAT.days.filter(x => x !== d) : [...REPEAT.days, d]; drawSlots(); },
   editSes: b => sesFormFlow(sesById(b.dataset.id)),
   delSes: async b => {
     const s = sesById(b.dataset.id), n = cardsIn(s.id).length;
@@ -136,7 +140,7 @@ document.addEventListener('focusin', e => { if (e.target.matches('[data-cnt]')) 
 /* ================= 使用教學（金框導覽） =================
    之後加功能時：新步驟標上 since: 新版本號，並把 TOUR_VERSION 加 1 */
 const TOUR_KEY = 'outreach.tour';
-const TOUR_VERSION = 3;
+const TOUR_VERSION = 4;
 const q1 = sel => document.querySelector(sel);
 const TOUR_STEPS = [
   { since: 1, where: 'home', target: () => q1('#new-team'), title: '建立開展隊', text: '任何人都能建立開展隊（例如一次福音開展活動），建立的人就是負責人，可以發邀請連結給大家加入。' },
@@ -144,6 +148,7 @@ const TOUR_STEPS = [
   { since: 2, where: 'home', target: () => q1('#to-admin'), title: '後台管理', text: '建立開展隊的人可以在後台一次管理自己建立的開展隊：選取、修改、開放或關閉加入、刪除。平台管理員看得到所有開展隊。' },
   { since: 1, where: 'team', tab: 'rec', target: () => q1('#new-ses') || q1('.ses-card'), title: '開展時段', text: '每次出去開展，先建立一個時段（時間、地點、要計數的項目），其他人點進去就能加入一起記錄。' },
   { since: 3, where: 'team', tab: 'rec', target: () => q1('#new-ses'), title: '時段範本', text: '建立過的開展時段會自動變成範本。建立新時段時，點一下範本就帶入名稱、時間、地點和計數項目，只要確認日期。' },
+  { since: 4, where: 'team', tab: 'rec', target: () => q1('#new-ses'), title: '一次建立多個時段', text: '像設定鬧鐘一樣：可以加好幾組時間（預設和第一組一樣），選「每天」「每週」或自訂星期（週一～主日），再選重複到哪一天，一次建好整段期間的時段。' },
   { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#counters'), title: '計數器', text: '按＋－記錄接觸人數、叩訪戶數、發單張數…，也可以直接點數字輸入，會自動儲存。' },
   { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#new-card'), title: '記名卡片', text: '遇到願意留資料的人就新增一張記名卡片，欄位都可以不填；勾「福、家、排、區」和「迫切代禱」，名字會出現在代禱牆。' },
   { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#my-rec .tools'), title: '一鍵複製、存成圖片', text: '每個頁面和卡片右上角都有「複製」和「存圖」，可以貼到 LINE 或存到手機相簿。' },

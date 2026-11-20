@@ -113,26 +113,77 @@ function sesTemplates() {
     <div class="tpl-row">${TPLS.map((t, i) => `<button class="tpl" type="button" data-tpl="${i}" aria-pressed="false" style="--tc:${th.btn}">
       <b>${esc(sesName(t))}</b><small>${esc([timeRange(t), t.title ? t.place : ''].filter(Boolean).join('・') || '—')}</small><small>計數 ${t.items.length} 項${t.note ? '・有備註' : ''}</small><small class="saved">上次 ${esc(dayLabel(t.date))}・${esc(t.creator)}</small></button>`).join('')}</div></div>`;
 }
+/* ---------- 批次建立：像設定鬧鐘一樣，可以有好幾組時間，每組可重複（每天／每週／自訂星期） ---------- */
+const REPEATS = [['none', '不重複'], ['daily', '每天'], ['weekly', '每週'], ['custom', '自訂']];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]; // 週一～主日
+const WD_NAME = d => d === 0 ? '主日' : '週' + WD[d];
+let SLOTS = [], REPEAT = { mode: 'none', days: [], until: '' };
+function defaultUntil(from) {
+  const e = parseYmd(TEAM.team.end), d = parseYmd(from) || now();
+  const four = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 27);
+  return ymd(e && e > d ? e : four);
+}
+/** 依重複規則展開成實際的日期與時間（同一天同一個開始時間只算一次），最多 60 個 */
+function expandSlots() {
+  const out = [], seen = new Set(), until = parseYmd(REPEAT.until);
+  SLOTS.forEach(sl => {
+    const d0 = parseYmd(sl.date); if (!d0) return;
+    const push = d => { const k = ymd(d) + sl.start; if (!seen.has(k)) { seen.add(k); out.push({ date: ymd(d), start: sl.start, end: sl.end }); } };
+    if (REPEAT.mode === 'none' || !until || until < d0) { push(d0); return; }
+    for (let d = new Date(d0), n = 0; d <= until && n < 400; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1), n++) {
+      const ok = REPEAT.mode === 'daily' || (REPEAT.mode === 'weekly' && d.getDay() === d0.getDay()) || (REPEAT.mode === 'custom' && REPEAT.days.includes(d.getDay()));
+      if (ok) push(d);
+    }
+  });
+  return out.sort((x, y) => (x.date + x.start).localeCompare(y.date + y.start));
+}
+function slotsHtml() {
+  const list = expandSlots(), many = list.length > 60;
+  return `${SLOTS.map((sl, i) => `<div class="slot" data-slot="${i}">
+      <div class="slot-h"><b>${SLOTS.length > 1 ? `第 ${i + 1} 組時間` : '日期與時間'}</b>${i ? `<button type="button" class="link-btn danger" data-act="rmSlot" data-i="${i}">移除</button>` : ''}</div>
+      <label class="field"><span>${REPEAT.mode === 'none' ? '日期' : '從哪一天開始'}</span><input type="date" data-sl="date" value="${esc(sl.date)}" required></label>
+      <div class="row2"><label class="field"><span>開始</span><input type="time" data-sl="start" value="${esc(sl.start)}"></label><label class="field"><span>結束</span><input type="time" data-sl="end" value="${esc(sl.end)}"></label></div>
+    </div>`).join('')}
+    <button type="button" class="btn plain small add-slot-btn" data-act="addSlot">${ICON.plus} 再加一組時間</button>
+    <div class="field repeat"><span>重複</span><div class="seg">${REPEATS.map(([k, l]) => `<button type="button" data-act="repeat" data-k="${k}" aria-selected="${REPEAT.mode === k}">${l}</button>`).join('')}</div>
+      ${REPEAT.mode === 'custom' ? `<div class="wdays">${WEEK_ORDER.map(d => `<button type="button" class="wday" data-act="wday" data-d="${d}" aria-pressed="${REPEAT.days.includes(d)}">${d === 0 ? '日' : WD[d]}</button>`).join('')}</div>` : ''}
+      ${REPEAT.mode === 'weekly' ? `<p class="help">每週${SLOTS.map(sl => { const d = parseYmd(sl.date); return d ? WD_NAME(d.getDay()).replace('週', '') : ''; }).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join('、')}（依每組的開始日期）</p>` : ''}
+      ${REPEAT.mode !== 'none' ? `<label class="field until"><span>重複到</span><input type="date" id="rep-until" value="${esc(REPEAT.until)}"></label>` : ''}</div>
+    <div class="slot-preview ${many ? 'warn' : ''}"><b>將建立 ${list.length} 個時段</b>${many ? '（一次最多 60 個，請縮短重複期間）' : ''}
+      <div class="sp-list">${list.slice(0, 60).map(x => `<span>${esc(dayLabel(x.date))}${x.start ? ' ' + x.start : ''}</span>`).join('')}</div></div>`;
+}
+function drawSlots() { const el = $('slots'); if (el) el.innerHTML = slotsHtml(); }
+function readSlots() {
+  $$('#slots [data-slot]').forEach(row => { const sl = SLOTS[+row.dataset.slot]; row.querySelectorAll('[data-sl]').forEach(i => { sl[i.dataset.sl] = i.value; }); });
+  const u = $('rep-until'); if (u) REPEAT.until = u.value;
+}
+
 function sesFormFlow(s) {
   const isNew = !s;
   s = s || { title: '', date: ymd(now()), start: '', end: '', place: '', items: ITEMS.map(x => x.k), note: '' };
+  if (isNew) { SLOTS = [{ date: s.date, start: '', end: '' }]; REPEAT = { mode: 'none', days: [], until: defaultUntil(s.date) }; }
   NAV++;
   setNav(TAB);
   view(`<div class="team-wrap" style="${themeVars(themeOf(TEAM.team))}">${subbar('返回', isNew ? '建立開展時段' : '修改開展時段', 'backRec')}
     ${isNew ? sesTemplates() : ''}
     <form class="panel" id="ses-form" autocomplete="off">
       <label class="field"><span>名稱（選填）</span><input name="title" maxlength="40" value="${esc(s.title)}" placeholder="例如：一中街掃街、社區叩門"></label>
-      <label class="field"><span>日期</span><input type="date" name="date" required value="${esc(s.date)}"></label>
-      <div class="row2"><label class="field"><span>開始</span><input type="time" name="start" value="${esc(s.start)}"></label><label class="field"><span>結束</span><input type="time" name="end" value="${esc(s.end)}"></label></div>
+      ${isNew ? `<div id="slots">${slotsHtml()}</div>` : `<label class="field"><span>日期</span><input type="date" name="date" required value="${esc(s.date)}"></label>
+      <div class="row2"><label class="field"><span>開始</span><input type="time" name="start" value="${esc(s.start)}"></label><label class="field"><span>結束</span><input type="time" name="end" value="${esc(s.end)}"></label></div>`}
       <label class="field"><span>地點</span><input name="place" maxlength="80" value="${esc(s.place)}" placeholder="例如：一中街、中興大學、崇德路社區"></label>
       <div class="field"><span>這個時段要計數的項目</span><div class="checks">${ITEMS.map(x => `<label class="check"><input type="checkbox" name="items" value="${x.k}" ${s.items.includes(x.k) ? 'checked' : ''}><span>${x.label}</span></label>`).join('')}</div></div>
       <label class="field"><span>備註（選填）</span><textarea name="note" maxlength="300" placeholder="集合地點、分組、要帶的東西…">${esc(s.note)}</textarea></label>
       <button class="btn send" type="submit">${isNew ? '建立時段' : '儲存'}</button>
     </form></div>`);
   const f = $('ses-form');
+  if (isNew) {
+    // 改了日期、時間：更新預覽（不重畫輸入框，才不會打斷輸入）
+    $('slots').addEventListener('change', e => { if (e.target.matches('[data-sl], #rep-until')) { readSlots(); drawSlots(); } });
+  }
   $$('[data-tpl]').forEach(b => b.onclick = () => {
     const t = TPLS[+b.dataset.tpl];
-    ['title', 'start', 'end', 'place', 'note'].forEach(k => { f.elements[k].value = t[k] || ''; });
+    ['title', 'place', 'note'].forEach(k => { f.elements[k].value = t[k] || ''; });
+    readSlots(); SLOTS.forEach(sl => { sl.start = t.start || ''; sl.end = t.end || ''; }); drawSlots();
     $$('#ses-form [name=items]').forEach(i => { i.checked = t.items.includes(i.value); });
     $$('[data-tpl]').forEach(x => x.setAttribute('aria-pressed', x === b));
     toast('已帶入範本，日期請確認');
@@ -144,13 +195,24 @@ function sesFormFlow(s) {
     if (!items.length) { toast('至少勾選一個計數項目'); return; }
     const removed = isNew ? [] : s.items.filter(k => !items.includes(k));
     if (removed.length && !await confirmBox({ title: `移除「${removed.map(k => ITEM[k].label).join('、')}」？`, text: '這個時段將不再記錄、統計這些項目。之後加回來，原本記的數字還在。', ok: '移除' })) return;
-    const data = { title: v('title'), date: v('date'), start: v('start'), end: v('end'), place: v('place'), items, note: v('note') };
-    const btn = f.querySelector('[type=submit]'); btn.disabled = true;
+    const base = { title: v('title'), place: v('place'), items, note: v('note') };
+    let slots = [];
+    if (isNew) {
+      readSlots(); slots = expandSlots();
+      if (REPEAT.mode === 'custom' && !REPEAT.days.length) { toast('請勾選要重複的星期'); return; }
+      if (!slots.length) { toast('請選擇日期'); return; }
+      if (slots.length > 60) { toast('一次最多建立 60 個時段'); return; }
+      if (slots.length > 1 && !await confirmBox({ title: `一次建立 ${slots.length} 個時段？`, text: `${dayLabel(slots[0].date)} ～ ${dayLabel(slots[slots.length - 1].date)}。之後每個時段都可以個別修改或刪除。`, ok: '建立', danger: false })) return;
+    }
+    const btn = f.querySelector('[type=submit]'); btn.disabled = true; btn.textContent = '建立中…';
     try {
-      if (isNew) { const r = await api('createSession', { teamId: TEAM.team.id, ses: data }); SUB = r.sessionId; toast('時段建立好了，可以邀請大家加入'); }
-      else { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, ses: data }); toast('已儲存'); }
+      if (isNew) {
+        const r = await api('createSessions', { teamId: TEAM.team.id, ses: base, slots });
+        SUB = r.ids.length === 1 ? r.ids[0] : '';
+        toast(r.ids.length === 1 ? '時段建立好了，可以邀請大家加入' : `已建立 ${r.ids.length} 個時段`);
+      } else { await api('updateSession', { teamId: TEAM.team.id, sessionId: s.id, ses: { ...base, date: v('date'), start: v('start'), end: v('end') } }); toast('已儲存'); }
       TAB = 'rec'; await reloadTeam(false);
-    } catch (err) { toast(err.message); btn.disabled = false; }
+    } catch (err) { toast(err.message); btn.disabled = false; btn.textContent = isNew ? '建立時段' : '儲存'; }
   };
 }
 

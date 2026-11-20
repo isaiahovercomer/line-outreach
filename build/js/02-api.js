@@ -101,6 +101,7 @@ async function demoApi(action, p) {
     case 'removeMember': d.members = d.members.filter(x => x.userId !== p.userId); return { ok: true, ...demoTeam() };
     case 'leaveTeam': return { ok: true };
     case 'createSession': { const id = 'S' + Date.now(); d.sessions.push({ ...p.ses, id, creatorId: me }); d.counts.push({ sid: id, userId: me, counts: {} }); return { ok: true, sessionId: id }; }
+    case 'createSessions': { const ids = p.slots.map((sl, i) => { const id = 'S' + Date.now() + i; d.sessions.push({ ...p.ses, ...sl, id, creatorId: me }); d.counts.push({ sid: id, userId: me, counts: {} }); return id; }); return { ok: true, ids }; }
     case 'updateSession': Object.assign(S(p.sessionId), p.ses); return { ok: true };
     case 'deleteSession': d.sessions = d.sessions.filter(x => x.id !== p.sessionId); d.cards = d.cards.filter(c => c.sessionId !== p.sessionId); return { ok: true };
     case 'joinSession': if (!d.counts.some(c => c.sid === p.sessionId && c.userId === me)) d.counts.push({ sid: p.sessionId, userId: me, counts: {} }); return { ok: true };

@@ -89,6 +89,7 @@ function doPost(e) {
       case 'leaveTeam':     leaveTeam(T()); out = { ok: true }; break;
       // 開展時段
       case 'createSession': need(T(), 'session'); out = { ok: true, sessionId: createSessionRow(T(), req.ses || {}) }; break;
+      case 'createSessions': need(T(), 'session'); out = { ok: true, ids: createSessionRows(T(), req.ses || {}, req.slots) }; break;
       case 'updateSession': updateSession(T(), req.sessionId, req.ses || {}); out = { ok: true }; break;
       case 'deleteSession': deleteSessionRow(T(), req.sessionId); out = { ok: true }; break;
       case 'joinSession':   joinSession(T(), req.sessionId); out = { ok: true }; break;
@@ -326,6 +327,26 @@ function createSessionRow(ctx, input) {
     sheet(SH.COUNTS).appendRow([id, ctx.tid, ctx.uid, '{}', now, now]); // 建立者自動加入
   });
   return id;
+}
+/** 一次建立多個時段（批次／重複），最多 60 個；共用名稱、地點、計數項目、備註 */
+function createSessionRows(ctx, base, slots) {
+  slots = (Array.isArray(slots) ? slots : []).slice(0, 61);
+  if (!slots.length) throw new Error('請選擇日期');
+  if (slots.length > 60) throw new Error('一次最多建立 60 個時段');
+  const rowsS = [], rowsC = [], ids = [], now = new Date();
+  slots.forEach((sl, i) => {
+    const v = sessionValues(Object.assign({}, base, { date: sl.date, start: sl.start, end: sl.end }));
+    const id = 'S' + fmt(now, 'yyMMddHHmmss') + String(100 + i) + Math.floor(Math.random() * 90 + 10);
+    ids.push(id);
+    rowsS.push([id, ctx.tid].concat(v, [ctx.uid, ctx.name, now, str(base.note, 300)]));
+    rowsC.push([id, ctx.tid, ctx.uid, '{}', now, now]);
+  });
+  withLock(() => {
+    const ss = sheet(SH.SESSIONS), cs = sheet(SH.COUNTS);
+    ss.getRange(ss.getLastRow() + 1, 1, rowsS.length, rowsS[0].length).setValues(rowsS);
+    cs.getRange(cs.getLastRow() + 1, 1, rowsC.length, rowsC[0].length).setValues(rowsC);
+  });
+  return ids;
 }
 function updateSession(ctx, sid, input) {
   const f = findSession(ctx, sid);
