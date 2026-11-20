@@ -673,6 +673,16 @@
   .slot .tpick select.inp { background-color: var(--paper); }
   .field > .tpick { display: flex; margin: 0; font-size: 16px; color: var(--ink); }
   .row2:has(.tpick.ampm) { grid-template-columns: 1fr; }
+
+  /* ---------- 傳講工具：人生的奧秘 ---------- */
+  .gospel-card { background: linear-gradient(135deg, #FFF6E4, var(--paper)); border: 1.5px solid var(--marigold); border-radius: 16px; padding: 12px 14px; margin: 12px 0 4px; }
+  .gospel-card.compact { margin: 0 0 16px; }
+  .gc-head { display: flex; align-items: center; gap: 10px; }
+  .gc-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--marigold); color: #fff; display: grid; place-items: center; flex: none; }
+  .gc-head b { display: block; font-family: var(--serif); font-weight: 900; font-size: 17px; }
+  .gc-head small { color: var(--ink-2); font-size: 12.5px; }
+  .gc-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .gc-btns .btn.small { margin: 0; flex: 1; padding: 8px 6px; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -874,6 +884,7 @@ const ICON = {
   pray: svg('<path d="M21 12a8.5 8.5 0 0 1-12.4 7.6L3 21l1.5-5A8.5 8.5 0 1 1 21 12z"/><path d="M12 15.5s-3.5-2-3.5-4.2a1.8 1.8 0 0 1 3.5-.6 1.8 1.8 0 0 1 3.5.6c0 2.2-3.5 4.2-3.5 4.2z"/>'),
   mem: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/>'),
   gear: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+  book: svg('<path d="M2 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
   minus: svg('<path d="M5 12h14"/>'),
   star: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
@@ -1374,12 +1385,26 @@ function renderTeam(keepScroll) {
   maybeStartTour();
 }
 
+/* ================= 傳講工具：人生的奧秘 =================
+   連到韓國福音書房（KGBR）官方的「人生的奧秘」互動傳講頁；網站會依手機語言自動顯示繁體中文。
+   官方網站不允許被嵌入其他網頁，所以在 LINE 裡用內建瀏覽器打開，關掉就回到平台 */
+const GOSPEL = { short: 'https://gospel.kgbr.co.kr/', long: 'https://gospel.kgbr.co.kr/long/', share: 'https://gospel.kgbr.co.kr/share/' };
+const gospelCard = compact => `<section class="gospel-card ${compact ? 'compact' : ''} no-shot" id="gospel-card">
+    <div class="gc-head"><span class="gc-ic" aria-hidden="true">${ICON.book}</span><div><b>人生的奧秘</b><small>傳講版・跟對方一起看，最後帶他禱告</small></div></div>
+    <div class="gc-btns"><button type="button" class="btn send small" data-act="openUrl" data-url="${GOSPEL.short}">1 分鐘版</button><button type="button" class="btn plain small" data-act="openUrl" data-url="${GOSPEL.long}">3 分鐘版</button>
+      <button type="button" class="btn plain small" data-act="copyGospel">${ICON.copy} 傳給對方</button></div>
+  </section>`;
+async function openUrl(url) {
+  if (inClient()) { try { await LIFF_READY; liff.openWindow({ url, external: false }); return; } catch (e) {} }
+  window.open(url, '_blank', 'noopener');
+}
+
 /* ================= 開展紀錄：時段列表 ================= */
 function renderRec() {
   if (SUB) return renderSession(sesById(SUB));
   const list = sortSes(TEAM.sessions), me = TEAM.me.userId;
   const groups = [['進行中、今天', list.filter(s => ['進行中', '今天'].includes(sesState(s)))], ['接下來', list.filter(s => sesState(s) === '即將').reverse()], ['已結束', list.filter(s => sesState(s) === '已結束')]];
-  return `<div class="sec-h"><h2>開展時段</h2>${TEAM.me.perms.session ? `<button class="btn send small" type="button" id="new-ses" data-act="newSes">${ICON.plus} 建立時段</button>` : ''}</div>
+  return `${gospelCard()}<div class="sec-h"><h2>開展時段</h2>${TEAM.me.perms.session ? `<button class="btn send small" type="button" id="new-ses" data-act="newSes">${ICON.plus} 建立時段</button>` : ''}</div>
     ${list.length ? groups.filter(g => g[1].length).map(([h, l]) => `<h3 class="grp-h">${h}</h3><div class="ses-list">${l.map(s => sesCard(s, me)).join('')}</div>`).join('')
       : `<div class="empty"><p>還沒有開展時段。</p><p class="muted">${TEAM.me.perms.session ? '按右上角「建立時段」，填時間、地點，大家就能加入一起記錄。' : '等負責人或隊友建立開展時段後，就能加入記錄。'}</p></div>`}`;
 }
@@ -1564,7 +1589,7 @@ function renderSession(s) {
     <div class="join-box"><p>你還沒加入這個時段。加入後就能記錄計數和有效名單。</p><button class="btn send" type="button" id="join-ses" data-act="joinSes" data-id="${esc(s.id)}">加入這個時段</button></div>`;
   const mine = cardsIn(s.id, me), missing = ITEMS.filter(x => !s.items.includes(x.k));
   const editing = Object.entries(EDIT).filter(([k, d]) => k.startsWith('new') && d.sessionId === s.id);
-  return `${subbar('開展紀錄', '', 'backRec')}${head}
+  return `${subbar('開展紀錄', '', 'backRec')}${head}${gospelCard(true)}
     <section class="panel" id="my-rec">
       <div class="sec-h"><h2>我的計數</h2>${tools(`rec:${s.id}`, 'my-rec', `${sesName(s)}-${TEAM.me.name}`)}</div>
       <p class="shot-only shot-cap">${esc(TEAM.me.name)}・${esc(sesLabel(s))}</p>
@@ -1938,6 +1963,8 @@ const ACTS = {
   openSes: b => { TAB = 'rec'; SUB = b.dataset.id; renderTeam(); },
   toSum: b => { flushCounts(); TAB = 'ses'; SUB = b.dataset.id; renderTeam(); },
   newSes: () => sesFormFlow(null),
+  openUrl: b => openUrl(b.dataset.url),
+  copyGospel: () => copyText(`送你一個 1 分鐘的小故事：「人生的奧秘」——人為什麼被造？人生的意義在哪裡？\n${GOSPEL.share}`, '已複製，可以貼給對方'),
   timeMode: b => { TIME24 = b.dataset.v === '1'; try { localStorage.setItem(TIME_KEY, TIME24 ? '1' : '0'); } catch (e) {} redrawTimePicks(); },
   addSlot: () => { readSlots(); const last = SLOTS[SLOTS.length - 1], d = parseYmd(last.date) || now(); SLOTS.push({ date: ymd(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)), start: SLOTS[0].start, end: SLOTS[0].end }); drawSlots(); },
   rmSlot: b => { readSlots(); SLOTS.splice(+b.dataset.i, 1); drawSlots(); },
@@ -2069,12 +2096,13 @@ document.addEventListener('focusin', e => { if (e.target.matches('[data-cnt]')) 
 /* ================= 使用教學（金框導覽） =================
    之後加功能時：新步驟標上 since: 新版本號，並把 TOUR_VERSION 加 1 */
 const TOUR_KEY = 'outreach.tour';
-const TOUR_VERSION = 4;
+const TOUR_VERSION = 5;
 const q1 = sel => document.querySelector(sel);
 const TOUR_STEPS = [
   { since: 1, where: 'home', target: () => q1('#new-team'), title: '建立開展隊', text: '任何人都能建立開展隊（例如一次福音開展活動），建立的人就是負責人，可以發邀請連結給大家加入。' },
   { since: 1, where: 'home', target: () => q1('.team-card'), title: '我的開展隊', text: '加入的開展隊都在這裡，點進去就能記錄和看彙整。' },
   { since: 2, where: 'home', target: () => q1('#to-admin'), title: '後台管理', text: '建立開展隊的人可以在後台一次管理自己建立的開展隊：選取、修改、開放或關閉加入、刪除。平台管理員看得到所有開展隊。' },
+  { since: 5, where: 'team', tab: 'rec', target: () => q1('#gospel-card'), title: '人生的奧秘 傳講版', text: '出去開展時，打開「人生的奧秘」1 分鐘或 3 分鐘版，跟對方一起看，最後帶他禱告；也可以按「傳給對方」把連結傳給他。' },
   { since: 1, where: 'team', tab: 'rec', target: () => q1('#new-ses') || q1('.ses-card'), title: '開展時段', text: '每次出去開展，先建立一個時段（時間、地點、要計數的項目），其他人點進去就能加入一起記錄。' },
   { since: 3, where: 'team', tab: 'rec', target: () => q1('#new-ses'), title: '時段範本', text: '建立過的開展時段會自動變成範本。建立新時段時，點一下範本就帶入名稱、時間、地點和計數項目，只要確認日期。' },
   { since: 4, where: 'team', tab: 'rec', target: () => q1('#new-ses'), title: '一次建立多個時段', text: '像設定鬧鐘一樣：可以加好幾組時間（預設和第一組一樣），選「每天」「每週」或自訂星期（週一～主日），再選重複到哪一天，一次建好整段期間的時段。' },

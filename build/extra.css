@@ -322,3 +322,13 @@
   .slot .tpick select.inp { background-color: var(--paper); }
   .field > .tpick { display: flex; margin: 0; font-size: 16px; color: var(--ink); }
   .row2:has(.tpick.ampm) { grid-template-columns: 1fr; }
+
+  /* ---------- 傳講工具：人生的奧秘 ---------- */
+  .gospel-card { background: linear-gradient(135deg, #FFF6E4, var(--paper)); border: 1.5px solid var(--marigold); border-radius: 16px; padding: 12px 14px; margin: 12px 0 4px; }
+  .gospel-card.compact { margin: 0 0 16px; }
+  .gc-head { display: flex; align-items: center; gap: 10px; }
+  .gc-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--marigold); color: #fff; display: grid; place-items: center; flex: none; }
+  .gc-head b { display: block; font-family: var(--serif); font-weight: 900; font-size: 17px; }
+  .gc-head small { color: var(--ink-2); font-size: 12.5px; }
+  .gc-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .gc-btns .btn.small { margin: 0; flex: 1; padding: 8px 6px; white-space: nowrap; }

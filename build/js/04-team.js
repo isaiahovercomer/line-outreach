@@ -83,12 +83,26 @@ function renderTeam(keepScroll) {
   maybeStartTour();
 }
 
+/* ================= 傳講工具：人生的奧秘 =================
+   連到韓國福音書房（KGBR）官方的「人生的奧秘」互動傳講頁；網站會依手機語言自動顯示繁體中文。
+   官方網站不允許被嵌入其他網頁，所以在 LINE 裡用內建瀏覽器打開，關掉就回到平台 */
+const GOSPEL = { short: 'https://gospel.kgbr.co.kr/', long: 'https://gospel.kgbr.co.kr/long/', share: 'https://gospel.kgbr.co.kr/share/' };
+const gospelCard = compact => `<section class="gospel-card ${compact ? 'compact' : ''} no-shot" id="gospel-card">
+    <div class="gc-head"><span class="gc-ic" aria-hidden="true">${ICON.book}</span><div><b>人生的奧秘</b><small>傳講版・跟對方一起看，最後帶他禱告</small></div></div>
+    <div class="gc-btns"><button type="button" class="btn send small" data-act="openUrl" data-url="${GOSPEL.short}">1 分鐘版</button><button type="button" class="btn plain small" data-act="openUrl" data-url="${GOSPEL.long}">3 分鐘版</button>
+      <button type="button" class="btn plain small" data-act="copyGospel">${ICON.copy} 傳給對方</button></div>
+  </section>`;
+async function openUrl(url) {
+  if (inClient()) { try { await LIFF_READY; liff.openWindow({ url, external: false }); return; } catch (e) {} }
+  window.open(url, '_blank', 'noopener');
+}
+
 /* ================= 開展紀錄：時段列表 ================= */
 function renderRec() {
   if (SUB) return renderSession(sesById(SUB));
   const list = sortSes(TEAM.sessions), me = TEAM.me.userId;
   const groups = [['進行中、今天', list.filter(s => ['進行中', '今天'].includes(sesState(s)))], ['接下來', list.filter(s => sesState(s) === '即將').reverse()], ['已結束', list.filter(s => sesState(s) === '已結束')]];
-  return `<div class="sec-h"><h2>開展時段</h2>${TEAM.me.perms.session ? `<button class="btn send small" type="button" id="new-ses" data-act="newSes">${ICON.plus} 建立時段</button>` : ''}</div>
+  return `${gospelCard()}<div class="sec-h"><h2>開展時段</h2>${TEAM.me.perms.session ? `<button class="btn send small" type="button" id="new-ses" data-act="newSes">${ICON.plus} 建立時段</button>` : ''}</div>
     ${list.length ? groups.filter(g => g[1].length).map(([h, l]) => `<h3 class="grp-h">${h}</h3><div class="ses-list">${l.map(s => sesCard(s, me)).join('')}</div>`).join('')
       : `<div class="empty"><p>還沒有開展時段。</p><p class="muted">${TEAM.me.perms.session ? '按右上角「建立時段」，填時間、地點，大家就能加入一起記錄。' : '等負責人或隊友建立開展時段後，就能加入記錄。'}</p></div>`}`;
 }
@@ -273,7 +287,7 @@ function renderSession(s) {
     <div class="join-box"><p>你還沒加入這個時段。加入後就能記錄計數和有效名單。</p><button class="btn send" type="button" id="join-ses" data-act="joinSes" data-id="${esc(s.id)}">加入這個時段</button></div>`;
   const mine = cardsIn(s.id, me), missing = ITEMS.filter(x => !s.items.includes(x.k));
   const editing = Object.entries(EDIT).filter(([k, d]) => k.startsWith('new') && d.sessionId === s.id);
-  return `${subbar('開展紀錄', '', 'backRec')}${head}
+  return `${subbar('開展紀錄', '', 'backRec')}${head}${gospelCard(true)}
     <section class="panel" id="my-rec">
       <div class="sec-h"><h2>我的計數</h2>${tools(`rec:${s.id}`, 'my-rec', `${sesName(s)}-${TEAM.me.name}`)}</div>
       <p class="shot-only shot-cap">${esc(TEAM.me.name)}・${esc(sesLabel(s))}</p>
