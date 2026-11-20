@@ -88,6 +88,8 @@ const THEMES = {
   service: { name: '湖水綠', btn: '#1F6F78', notch: '#8FC1C7', paper: '#F4FAFA', band: '#185A62' },
 };
 const themeOf = t => THEMES[t && t.theme] || THEMES.gospel;
+/** 開展隊圖標：有圖片就顯示圖片，沒有就用色調底＋名稱第一個字 */
+const teamIcon = (t, cls = 'team-icon') => t && t.image ? `<img class="${cls}" src="${esc(t.image)}" alt="" loading="lazy">` : `<span class="${cls} ph" style="--tc:${themeOf(t).btn}" aria-hidden="true">${esc(String((t && t.title) || '開').trim().slice(0, 1))}</span>`;
 const themeVars = th => `--line:${th.btn};--line-dark:${th.band};--chrome:${th.band};--marigold:${th.notch};--paper:${th.paper}`;
 
 /* ================= 確認視窗 ================= */

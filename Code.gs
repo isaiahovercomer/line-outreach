@@ -12,7 +12,7 @@ const CONFIG = {
 const SH = { PEOPLE: '使用者', TEAMS: '開展隊', MEMBERS: '隊員', SESSIONS: '時段', COUNTS: '計數', CARDS: '名單卡', ADMINS: '管理員' };
 const HEADERS = {
   '使用者': ['LINE userId', '姓名', 'LINE名稱', '更新時間'],
-  '開展隊': ['隊代碼', '名稱', '說明', '開始日', '結束日', '色調', '邀請碼', '開放加入', '建立者', '建立時間'],
+  '開展隊': ['隊代碼', '名稱', '說明', '開始日', '結束日', '色調', '邀請碼', '開放加入', '建立者', '建立時間', '圖片'],
   '隊員': ['隊代碼', 'LINE userId', '姓名', '職稱', '權限', '加入時間'],
   '時段': ['時段代碼', '隊代碼', '名稱', '日期', '開始', '結束', '地點', '計數項目', '建立者 userId', '建立者', '建立時間', '備註'],
   '計數': ['時段代碼', '隊代碼', 'LINE userId', '計數', '加入時間', '更新時間'],
@@ -20,7 +20,7 @@ const HEADERS = {
     '福', '家', '排', '區', '迫切代禱', '備註', '建立時間', '更新時間'],
   '管理員': ['LINE userId', '名稱'],
 };
-const TM = { ID: 0, TITLE: 1, DESC: 2, START: 3, END: 4, THEME: 5, CODE: 6, OPEN: 7, CREATOR: 8, CREATED: 9 };
+const TM = { ID: 0, TITLE: 1, DESC: 2, START: 3, END: 4, THEME: 5, CODE: 6, OPEN: 7, CREATOR: 8, CREATED: 9, IMAGE: 10 };
 const MB = { TID: 0, UID: 1, NAME: 2, TITLE: 3, PERMS: 4, JOINED: 5 };
 const SS = { ID: 0, TID: 1, TITLE: 2, DATE: 3, START: 4, END: 5, PLACE: 6, ITEMS: 7, CUID: 8, CNAME: 9, CREATED: 10, NOTE: 11 };
 const CT = { SID: 0, TID: 1, UID: 2, COUNTS: 3, JOINED: 4, UPDATED: 5 };
@@ -208,8 +208,10 @@ function ownerOf(r) { const m = /\((U[0-9a-f]+)\)\s*$/.exec(String(r[TM.CREATOR]
 function rowToTeam(r) {
   return { id: String(r[TM.ID]), title: String(r[TM.TITLE]), desc: String(r[TM.DESC] || ''), start: ymdOf(r[TM.START]), end: ymdOf(r[TM.END]),
     theme: THEMES.indexOf(String(r[TM.THEME])) >= 0 ? String(r[TM.THEME]) : 'gospel', code: String(r[TM.CODE] || ''), open: isTrue(r[TM.OPEN]),
-    ownerId: ownerOf(r), owner: String(r[TM.CREATOR] || '').replace(/\s*\(U[0-9a-f]+\)\s*$/, ''), created: r[TM.CREATED] instanceof Date ? fmt(r[TM.CREATED], 'yyyy/M/d') : '' };
+    ownerId: ownerOf(r), owner: String(r[TM.CREATOR] || '').replace(/\s*\(U[0-9a-f]+\)\s*$/, ''), created: r[TM.CREATED] instanceof Date ? fmt(r[TM.CREATED], 'yyyy/M/d') : '', image: cleanImage(r[TM.IMAGE]) };
 }
+/** 開展隊圖標：上傳到雲端硬碟的照片，或使用者貼的 https 圖片網址 */
+function cleanImage(v) { const u = str(v, 600); return /^https:\/\/[^\s"'<>]+$/.test(u) ? u : ''; }
 function findTeam(id) { const f = findRow(SH.TEAMS, TM.ID, id); if (!f) throw new Error('找不到這個開展隊，可能已經被刪除'); return f; }
 function teamValues(input) {
   const title = str(input.title, 40);
@@ -221,7 +223,7 @@ function createTeam(user, input, myName) {
   const nm = nameOf(user.userId) || user.displayName;
   const v = teamValues(input), id = newId('T');
   withLock(() => {
-    sheet(SH.TEAMS).appendRow([id].concat(v, [inviteCode(), true, nm + ' (' + user.userId + ')', new Date()]));
+    sheet(SH.TEAMS).appendRow([id].concat(v, [inviteCode(), true, nm + ' (' + user.userId + ')', new Date(), cleanImage(input.image)]));
     sheet(SH.MEMBERS).appendRow([id, user.userId, nm, str(input.myTitle, 12) || '隊長', 'owner', new Date()]);
   });
   return rowToTeam(findTeam(id).r);
@@ -230,6 +232,7 @@ function updateTeam(id, input) {
   const v = teamValues(input), f = findTeam(id);
   sheet(SH.TEAMS).getRange(f.row, 2, 1, v.length).setValues([v]);
   if (input.open != null) sheet(SH.TEAMS).getRange(f.row, TM.OPEN + 1).setValue(!!input.open);
+  if (input.image != null) sheet(SH.TEAMS).getRange(f.row, TM.IMAGE + 1).setValue(cleanImage(input.image));
   return rowToTeam(findTeam(id).r);
 }
 function resetInvite(id) { const f = findTeam(id); sheet(SH.TEAMS).getRange(f.row, TM.CODE + 1).setValue(inviteCode()); return rowToTeam(findTeam(id).r); }
@@ -269,7 +272,7 @@ function invitePreview(user, code) {
   const t = rows(SH.TEAMS).map(rowToTeam).filter(x => x.code && x.code === str(code, 20).toUpperCase())[0];
   if (!t) throw new Error('邀請連結已失效，請向負責人索取新的連結');
   const mem = memberRows(t.id);
-  return { team: { id: t.id, title: t.title, desc: t.desc, start: t.start, end: t.end, theme: t.theme, owner: t.owner, open: t.open },
+  return { team: { id: t.id, title: t.title, desc: t.desc, start: t.start, end: t.end, theme: t.theme, owner: t.owner, open: t.open, image: t.image },
     memberCount: mem.length, already: mem.some(r => String(r[MB.UID]) === user.userId), name: nameOf(user.userId) };
 }
 function joinTeam(user, code, name) {
@@ -492,7 +495,7 @@ function adminTeams(user) {
   const mem = rows(SH.MEMBERS), ses = rows(SH.SESSIONS), cards = rows(SH.CARDS), cnt = rows(SH.COUNTS);
   const teams = rows(SH.TEAMS).map(rowToTeam).filter(t => admin || t.ownerId === user.userId).map(t => {
     const ss = ses.filter(r => String(r[SS.TID]) === t.id).map(r => ymdOf(r[SS.DATE])).sort();
-    return { id: t.id, title: t.title, desc: t.desc, start: t.start, end: t.end, theme: t.theme, open: t.open, code: t.code,
+    return { id: t.id, title: t.title, desc: t.desc, start: t.start, end: t.end, theme: t.theme, open: t.open, code: t.code, image: t.image,
       owner: names[t.ownerId] || t.owner, mine: t.ownerId === user.userId, created: t.created,
       member: mem.some(r => String(r[MB.TID]) === t.id && String(r[MB.UID]) === user.userId),
       memberCount: mem.filter(r => String(r[MB.TID]) === t.id).length, sessionCount: ss.length, lastDate: ss[ss.length - 1] || '',
@@ -507,7 +510,7 @@ function listTeams(user) {
     const m = mem.filter(r => String(r[MB.TID]) === t.id), mine = m.filter(r => String(r[MB.UID]) === user.userId)[0];
     if (!mine) return null; // 首頁只列自己加入的；平台管理員在「後台」看全部
     const ss = ses.filter(r => String(r[SS.TID]) === t.id).map(r => ymdOf(r[SS.DATE])).sort();
-    return { id: t.id, title: t.title, desc: t.desc, start: t.start, end: t.end, theme: t.theme, owner: t.owner,
+    return { id: t.id, title: t.title, desc: t.desc, start: t.start, end: t.end, theme: t.theme, owner: t.owner, image: t.image,
       member: !!mine, title2: mine ? String(mine[MB.TITLE] || '') : '', role: mine ? (String(mine[MB.PERMS]) === 'owner' ? 'owner' : (parsePerms(mine[MB.PERMS]).manage ? 'admin' : 'member')) : 'platform',
       memberCount: m.length, sessionCount: ss.length, lastDate: ss[ss.length - 1] || '', cardCount: cards.filter(r => String(r[CD.TID]) === t.id).length };
   }).filter(Boolean).reverse();

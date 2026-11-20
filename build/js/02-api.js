@@ -48,7 +48,7 @@ const demo = (() => {
   return {
     me: { userId: 'U2', displayName: '晨光', isAdmin: DEMO_MODE === 'admin' },
     people, members, sessions, counts, cards,
-    team: { id: 'T1', title: '2026 秋季台中一中福音開展隊', desc: '每週出外開展，記錄接觸的人，一起為他們禱告。', start: '2026-11-01', end: '2026-12-20', theme: 'gospel', code: 'K7Q2M9XA', open: true, ownerId: 'U2', owner: '簡晨光', created: '2026/11/1' },
+    team: { id: 'T1', title: '2026 秋季台中一中福音開展隊', desc: '每週出外開展，記錄接觸的人，一起為他們禱告。', start: '2026-11-01', end: '2026-12-20', theme: 'gospel', image: 'img/demo-team.svg', code: 'K7Q2M9XA', open: true, ownerId: 'U2', owner: '簡晨光', created: '2026/11/1' },
     teams: [{ id: 'T2', title: '寒假校園福音開展', desc: '', start: '2027-01-18', end: '2027-02-10', theme: 'sky', owner: '孫學暐', member: true, title2: '隊員', role: 'member', memberCount: 9, sessionCount: 0, lastDate: '', cardCount: 0 }],
   };
 })();

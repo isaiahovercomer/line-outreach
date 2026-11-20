@@ -47,7 +47,7 @@ function admRow(t) {
   return `<article class="adm-row ${ADM_SEL.has(t.id) ? 'sel' : ''}" style="--tc:${th.btn};--tn:${th.notch}">
     <label class="adm-check no-shot" aria-label="選取 ${esc(t.title)}"><input type="checkbox" data-adm-sel="${esc(t.id)}" ${ADM_SEL.has(t.id) ? 'checked' : ''}></label>
     <div class="adm-main">
-      <div class="adm-t"><b>${esc(t.title)}</b><span class="state ${t.open ? 's-on' : 's-end'}">${t.open ? '開放加入' : '不開放'}</span></div>
+      <div class="adm-t">${teamIcon(t, 'adm-img')}<b>${esc(t.title)}</b><span class="state ${t.open ? 's-on' : 's-end'}">${t.open ? '開放加入' : '不開放'}</span></div>
       <p class="muted small">${esc(periodLabel(t.start, t.end) || '未設定期間')}・建立者 ${esc(t.owner)}${t.mine ? '（我）' : ''}・${esc(t.created)} 建立</p>
       <p class="adm-stats"><span><b>${t.memberCount}</b>隊員</span><span><b>${t.sessionCount}</b>時段</span><span><b>${t.partCount || 0}</b>人次</span><span><b>${t.cardCount}</b>名單</span>${t.lastDate ? `<span class="muted small">最近 ${esc(dayLabel(t.lastDate))}</span>` : ''}</p>
       <div class="adm-acts no-shot">

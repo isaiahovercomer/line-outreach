@@ -637,6 +637,24 @@
   .slot-preview.warn { background: rgba(176, 58, 46, .1); color: var(--stamp); }
   .sp-list { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; max-height: 132px; overflow-y: auto; }
   .sp-list span { background: var(--paper); border-radius: 6px; padding: 1px 7px; font-size: 12.5px; color: var(--ink); }
+
+  /* ---------- 開展隊圖標 ---------- */
+  .team-icon, .tc-img, .tt-img, .adm-img { object-fit: cover; flex: none; display: inline-grid; place-items: center; overflow: hidden; }
+  .ph { background: var(--tc); color: #fff; font-family: var(--serif); font-weight: 900; }
+  .tc-img { width: 56px; height: 56px; border-radius: 14px; margin: 14px 0 0 14px; font-size: 24px; }
+  .team-card .tc-main { padding-left: 12px; }
+  .tt-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .tt-img { width: 50px; height: 50px; border-radius: 12px; border: 2px solid rgba(255,255,255,.7); font-size: 22px; }
+  .tt-img.ph { background: rgba(255,255,255,.15); }
+  .adm-t { justify-content: flex-start !important; align-items: center !important; }
+  .adm-t b { flex: 1; min-width: 0; }
+  .adm-img { width: 38px; height: 38px; border-radius: 10px; font-size: 17px; }
+  .img-field { display: flex; align-items: center; gap: 14px; }
+  .img-pv { width: 72px; height: 72px; border-radius: 16px; background: var(--tc); color: #fff; display: grid; place-items: center; font-family: var(--serif); font-weight: 900; font-size: 30px; overflow: hidden; flex: none; }
+  .img-pv img { width: 100%; height: 100%; object-fit: cover; }
+  .img-btns { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .img-btns .btn.small { margin: 0; cursor: pointer; }
+  .join-img { width: 76px; height: 76px; border-radius: 18px; object-fit: cover; display: block; margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -735,6 +753,8 @@ const THEMES = {
   service: { name: '湖水綠', btn: '#1F6F78', notch: '#8FC1C7', paper: '#F4FAFA', band: '#185A62' },
 };
 const themeOf = t => THEMES[t && t.theme] || THEMES.gospel;
+/** 開展隊圖標：有圖片就顯示圖片，沒有就用色調底＋名稱第一個字 */
+const teamIcon = (t, cls = 'team-icon') => t && t.image ? `<img class="${cls}" src="${esc(t.image)}" alt="" loading="lazy">` : `<span class="${cls} ph" style="--tc:${themeOf(t).btn}" aria-hidden="true">${esc(String((t && t.title) || '開').trim().slice(0, 1))}</span>`;
 const themeVars = th => `--line:${th.btn};--line-dark:${th.band};--chrome:${th.band};--marigold:${th.notch};--paper:${th.paper}`;
 
 /* ================= 確認視窗 ================= */
@@ -896,7 +916,7 @@ const demo = (() => {
   return {
     me: { userId: 'U2', displayName: '晨光', isAdmin: DEMO_MODE === 'admin' },
     people, members, sessions, counts, cards,
-    team: { id: 'T1', title: '2026 秋季台中一中福音開展隊', desc: '每週出外開展，記錄接觸的人，一起為他們禱告。', start: '2026-11-01', end: '2026-12-20', theme: 'gospel', code: 'K7Q2M9XA', open: true, ownerId: 'U2', owner: '簡晨光', created: '2026/11/1' },
+    team: { id: 'T1', title: '2026 秋季台中一中福音開展隊', desc: '每週出外開展，記錄接觸的人，一起為他們禱告。', start: '2026-11-01', end: '2026-12-20', theme: 'gospel', image: 'img/demo-team.svg', code: 'K7Q2M9XA', open: true, ownerId: 'U2', owner: '簡晨光', created: '2026/11/1' },
     teams: [{ id: 'T2', title: '寒假校園福音開展', desc: '', start: '2027-01-18', end: '2027-02-10', theme: 'sky', owner: '孫學暐', member: true, title2: '隊員', role: 'member', memberCount: 9, sessionCount: 0, lastDate: '', cardCount: 0 }],
   };
 })();
@@ -1110,7 +1130,7 @@ function renderHome() {
   view(`${brandHeader()}
     <p class="hello">${ME.name ? `平安，${esc(ME.name)}！` : '平安！'}選一個開展隊，或建立新的開展隊。</p>
     <div class="team-list">${teams.map(t => { const th = themeOf(t); return `<button class="team-card" type="button" data-act="openTeam" data-id="${esc(t.id)}" style="--tc:${th.btn};--tn:${th.notch}">
-      <span class="tc-band"></span>
+      <span class="tc-band"></span>${teamIcon(t, 'tc-img')}
       <span class="tc-main"><b>${esc(t.title)}</b><small>${esc(periodLabel(t.start, t.end) || '未設定期間')}・${esc(t.title2 || role(t))}</small>
       <span class="tc-stats"><span><b>${t.sessionCount}</b>時段</span><span><b>${t.cardCount}</b>名單</span><span><b>${t.memberCount}</b>隊員</span></span></span></button>`; }).join('')
       || `<div class="empty"><p>還沒有加入任何開展隊。</p><p class="muted">點負責人傳來的邀請連結就能加入；或自己建立一個開展隊，邀請大家一起來。</p></div>`}</div>
@@ -1128,6 +1148,12 @@ function teamForm(t, isNew) {
     <label class="field"><span>開展隊名稱</span><input name="title" maxlength="40" required value="${esc(t.title)}" placeholder="例如：2026 秋季一中福音開展隊"></label>
     <label class="field"><span>說明（選填）</span><textarea name="desc" maxlength="300" placeholder="目標、範圍、集合地點…">${esc(t.desc)}</textarea></label>
     <div class="row2"><label class="field"><span>開始日</span><input type="date" name="start" value="${esc(t.start)}"></label><label class="field"><span>結束日（選填）</span><input type="date" name="end" value="${esc(t.end)}"></label></div>
+    <div class="field"><span>開展隊圖標（選填：顯示在列表、頁首和發到 LINE 的圖卡上）</span>
+      <div class="img-field"><span class="img-pv" id="tf-pv" style="--tc:${themeOf(t).btn}">${t.image ? `<img src="${esc(t.image)}" alt="">` : esc((t.title || '開').slice(0, 1))}</span>
+        <div class="img-btns"><label class="btn plain small">${ICON.image} 上傳圖片<input type="file" accept="image/*" id="tf-file" hidden></label>
+          ${t.image ? '<button type="button" class="link-btn danger" id="tf-clear">移除圖片</button>' : '<button type="button" class="link-btn danger" id="tf-clear" hidden>移除圖片</button>'}</div></div>
+      <input name="image" class="inp" type="url" inputmode="url" placeholder="或貼上圖片網址 https://…" value="${esc(t.image || '')}" style="margin-top:8px">
+      <p class="help" id="tf-st"></p></div>
     ${isNew ? `<label class="field"><span>你在這個隊的職稱</span><input name="myTitle" maxlength="12" value="隊長"></label>` : ''}
     <div class="field"><span>色調</span><div class="tones" role="radiogroup">${Object.entries(THEMES).map(([k, th]) => `<button type="button" role="radio" aria-checked="${t.theme === k}" data-tone="${k}" style="--sw:${th.btn};--sw2:${th.notch}"><i></i>${th.name}</button>`).join('')}</div></div>
     ${isNew ? '' : `<label class="switch"><input type="checkbox" name="open" ${t.open ? 'checked' : ''}><span>開放用邀請連結加入</span></label>`}
@@ -1137,13 +1163,24 @@ function teamForm(t, isNew) {
 function bindTeamForm(onSubmit) {
   const f = $('team-form');
   f.querySelectorAll('[data-tone]').forEach(b => b.onclick = () => f.querySelectorAll('[data-tone]').forEach(x => x.setAttribute('aria-checked', x === b)));
+  const pv = () => { const u = f.elements.image.value.trim(); $('tf-pv').innerHTML = isHttps(u) || /^data:|^icons\/|^img\//.test(u) ? `<img src="${esc(u)}" alt="">` : esc((f.elements.title.value || '開').slice(0, 1)); $('tf-clear').hidden = !u; };
+  f.elements.image.oninput = pv;
+  f.elements.title.addEventListener('input', () => { if (!f.elements.image.value.trim()) pv(); });
+  $('tf-clear').onclick = () => { f.elements.image.value = ''; pv(); };
+  $('tf-file').onchange = async e => {
+    const file = e.target.files[0]; e.target.value = '';
+    if (!file) return;
+    $('tf-st').textContent = '上傳中…';
+    try { f.elements.image.value = (await api('uploadImage', { data: await shrinkImage(file, 800, 0.85), mime: 'image/jpeg' })).url; pv(); $('tf-st').textContent = '已上傳'; }
+    catch (err) { $('tf-st').textContent = ''; toast('上傳失敗：' + err.message); }
+  };
   f.onsubmit = async e => {
     e.preventDefault();
     const v = n => (f.elements[n] ? f.elements[n].value : '').trim();
     const theme = (f.querySelector('[data-tone][aria-checked="true"]') || {}).dataset?.tone || 'gospel';
     const btn = f.querySelector('[type=submit]'), label = btn.textContent;
     btn.disabled = true; btn.textContent = '儲存中…';
-    try { await onSubmit({ title: v('title'), desc: v('desc'), start: v('start'), end: v('end'), theme, myTitle: v('myTitle'), open: f.elements.open ? f.elements.open.checked : true }, v('myname')); }
+    try { await onSubmit({ title: v('title'), desc: v('desc'), start: v('start'), end: v('end'), theme, image: v('image'), myTitle: v('myTitle'), open: f.elements.open ? f.elements.open.checked : true }, v('myname')); }
     catch (err) { toast(err.message); btn.disabled = false; btn.textContent = label; }
   };
 }
@@ -1152,7 +1189,7 @@ function newTeamFlow() {
   bindTeamForm(async (team, myname) => {
     const r = await api('createTeam', { team, name: myname });
     if (myname && ME) ME.name = myname;
-    HOME = null;
+    HOME = null; TEAM = null;
     teamFlow(r.team.id, 'mem', '');
     toast('開展隊建立好了，發邀請連結給大家吧');
   });
@@ -1166,7 +1203,7 @@ async function joinFlow(code) {
   const t = r.team, th = themeOf(t);
   document.title = `加入「${t.title}」`;
   view(`<section class="solo" style="${themeVars(th)}">
-    <div class="ticket"><div class="main"><p class="kicker">邀請你加入開展隊</p><h2 class="title">${esc(t.title)}</h2>
+    <div class="ticket"><div class="main">${t.image ? `<img class="join-img" src="${esc(t.image)}" alt="">` : ''}<p class="kicker">邀請你加入開展隊</p><h2 class="title">${esc(t.title)}</h2>
       <dl>${t.start || t.end ? `<dt>期間</dt><dd>${esc(periodLabel(t.start, t.end))}</dd>` : ''}<dt>負責人</dt><dd>${esc(t.owner)}</dd><dt>隊員</dt><dd>${r.memberCount} 人</dd></dl>
       ${t.desc ? `<p class="desc">${esc(t.desc)}</p>` : ''}</div>
       <div class="perf"></div>
@@ -1310,7 +1347,7 @@ function renderTeam(keepScroll) {
   const body = { rec: renderRec, ses: renderSesSum, all: renderAll, pray: renderPray, mem: renderMembers }[TAB]();
   view(`<div class="team-wrap" style="${themeVars(th)}">
     <header class="team-top"><button class="back light" type="button" data-act="home">‹ 我的開展隊</button>
-      <h1>${esc(t.title)}</h1><p>${esc(periodLabel(t.start, t.end))}${t.start || t.end ? '・' : ''}${esc(me.name)}${myTitle ? `（${esc(myTitle)}）` : ''}</p>
+      <div class="tt-row">${teamIcon(t, 'tt-img')}<div><h1>${esc(t.title)}</h1><p>${esc(periodLabel(t.start, t.end))}${t.start || t.end ? '・' : ''}${esc(me.name)}${myTitle ? `（${esc(myTitle)}）` : ''}</p></div></div>
       <button class="help" type="button" data-act="tour" aria-label="使用教學">?</button></header>
     ${DEMO ? `<p class="demo-note">預覽模式：目前使用範例資料。</p>` : ''}
     ${body}</div>`, keepScroll);
@@ -1754,20 +1791,28 @@ const flexBtn = (label, uri, th) => ({ type: 'box', layout: 'vertical', paddingA
   { type: 'box', layout: 'horizontal', spacing: 'md', contents: [
     { type: 'box', layout: 'vertical', width: '6px', cornerRadius: '3px', backgroundColor: th.notch, contents: [] },
     { type: 'button', style: 'primary', color: th.btn, height: 'sm', flex: 1, action: { type: 'uri', label: String(label).slice(0, 20), uri } } ] }] });
+/** 圖卡上方：開展隊圖標（有的話）＋小標＋標題 */
+function flexHead(t, kicker, title, th) {
+  const texts = { type: 'box', layout: 'vertical', flex: 1, contents: [
+    { type: 'text', text: kicker, size: 'xs', color: th.btn, weight: 'bold', wrap: true },
+    { type: 'text', text: title, weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' }] };
+  if (!isHttps(t.image)) return [texts];
+  return [{ type: 'box', layout: 'horizontal', spacing: 'lg', contents: [
+    { type: 'box', layout: 'vertical', width: '64px', height: '64px', cornerRadius: '14px', flex: 0, contents: [{ type: 'image', url: t.image, size: 'full', aspectMode: 'cover', aspectRatio: '1:1' }] },
+    texts] }];
+}
 const bubble = (th, body, footer) => ({ type: 'bubble', size: 'mega', styles: { body: { backgroundColor: th.paper }, footer: { backgroundColor: th.paper } },
   body: { type: 'box', layout: 'vertical', paddingAll: '20px', contents: body }, footer });
 function inviteFlex(t) {
   const th = themeOf(t);
-  const body = [{ type: 'text', text: '邀請你加入開展隊', size: 'xs', color: th.btn, weight: 'bold' },
-    { type: 'text', text: t.title, weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+  const body = [...flexHead(t, '邀請你加入開展隊', t.title, th),
     { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: [flexInfo('期間', periodLabel(t.start, t.end), th), flexInfo('負責人', t.owner, th)] }];
   if (t.desc) body.push({ type: 'text', text: t.desc.slice(0, 300), size: 'sm', color: '#66675F', wrap: true, margin: 'lg' });
   return { type: 'flex', altText: `邀請你加入「${t.title}」`, contents: bubble(th, body, flexBtn('加入開展隊', liffUrl(`join=${t.code}`), th)) };
 }
 function sesFlex(s) {
   const t = TEAM.team, th = themeOf(t);
-  const body = [{ type: 'text', text: `${t.title}・開展時段`, size: 'xs', color: th.btn, weight: 'bold', wrap: true },
-    { type: 'text', text: sesName(s), weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+  const body = [...flexHead(t, `${t.title}・開展時段`, sesName(s), th),
     { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: [flexInfo('日期', dayLabel(s.date), th), flexInfo('時間', timeRange(s), th), flexInfo('地點', s.place, th), flexInfo('參加', `${s.parts.length} 人`, th)] }];
   if (s.note) body.push({ type: 'text', text: s.note.slice(0, 300), size: 'sm', color: '#66675F', wrap: true, margin: 'lg' });
   const q = `t=${encodeURIComponent(t.id)}&s=${encodeURIComponent(s.id)}${t.open && t.code ? `&j=${t.code}` : ''}`;
@@ -1775,8 +1820,7 @@ function sesFlex(s) {
 }
 function sumFlex(s) {
   const t = TEAM.team, th = themeOf(t), cards = sortCards(cardsIn(s.id));
-  const body = [{ type: 'text', text: `${t.title}・時段彙整`, size: 'xs', color: th.btn, weight: 'bold', wrap: true },
-    { type: 'text', text: sesName(s), weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+  const body = [...flexHead(t, `${t.title}・時段彙整`, sesName(s), th),
     { type: 'text', text: `${sesLabel(s)}・${s.parts.length} 人參加`, size: 'xs', color: '#66675F', wrap: true, margin: 'sm' },
     { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: s.items.map(k => flexInfo(ITEM[k].label, sesTotal(s, k), th)) }];
   if (cards.length) {
@@ -2124,7 +2168,7 @@ function admRow(t) {
   return `<article class="adm-row ${ADM_SEL.has(t.id) ? 'sel' : ''}" style="--tc:${th.btn};--tn:${th.notch}">
     <label class="adm-check no-shot" aria-label="選取 ${esc(t.title)}"><input type="checkbox" data-adm-sel="${esc(t.id)}" ${ADM_SEL.has(t.id) ? 'checked' : ''}></label>
     <div class="adm-main">
-      <div class="adm-t"><b>${esc(t.title)}</b><span class="state ${t.open ? 's-on' : 's-end'}">${t.open ? '開放加入' : '不開放'}</span></div>
+      <div class="adm-t">${teamIcon(t, 'adm-img')}<b>${esc(t.title)}</b><span class="state ${t.open ? 's-on' : 's-end'}">${t.open ? '開放加入' : '不開放'}</span></div>
       <p class="muted small">${esc(periodLabel(t.start, t.end) || '未設定期間')}・建立者 ${esc(t.owner)}${t.mine ? '（我）' : ''}・${esc(t.created)} 建立</p>
       <p class="adm-stats"><span><b>${t.memberCount}</b>隊員</span><span><b>${t.sessionCount}</b>時段</span><span><b>${t.partCount || 0}</b>人次</span><span><b>${t.cardCount}</b>名單</span>${t.lastDate ? `<span class="muted small">最近 ${esc(dayLabel(t.lastDate))}</span>` : ''}</p>
       <div class="adm-acts no-shot">

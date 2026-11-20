@@ -134,20 +134,28 @@ const flexBtn = (label, uri, th) => ({ type: 'box', layout: 'vertical', paddingA
   { type: 'box', layout: 'horizontal', spacing: 'md', contents: [
     { type: 'box', layout: 'vertical', width: '6px', cornerRadius: '3px', backgroundColor: th.notch, contents: [] },
     { type: 'button', style: 'primary', color: th.btn, height: 'sm', flex: 1, action: { type: 'uri', label: String(label).slice(0, 20), uri } } ] }] });
+/** 圖卡上方：開展隊圖標（有的話）＋小標＋標題 */
+function flexHead(t, kicker, title, th) {
+  const texts = { type: 'box', layout: 'vertical', flex: 1, contents: [
+    { type: 'text', text: kicker, size: 'xs', color: th.btn, weight: 'bold', wrap: true },
+    { type: 'text', text: title, weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' }] };
+  if (!isHttps(t.image)) return [texts];
+  return [{ type: 'box', layout: 'horizontal', spacing: 'lg', contents: [
+    { type: 'box', layout: 'vertical', width: '64px', height: '64px', cornerRadius: '14px', flex: 0, contents: [{ type: 'image', url: t.image, size: 'full', aspectMode: 'cover', aspectRatio: '1:1' }] },
+    texts] }];
+}
 const bubble = (th, body, footer) => ({ type: 'bubble', size: 'mega', styles: { body: { backgroundColor: th.paper }, footer: { backgroundColor: th.paper } },
   body: { type: 'box', layout: 'vertical', paddingAll: '20px', contents: body }, footer });
 function inviteFlex(t) {
   const th = themeOf(t);
-  const body = [{ type: 'text', text: '邀請你加入開展隊', size: 'xs', color: th.btn, weight: 'bold' },
-    { type: 'text', text: t.title, weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+  const body = [...flexHead(t, '邀請你加入開展隊', t.title, th),
     { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: [flexInfo('期間', periodLabel(t.start, t.end), th), flexInfo('負責人', t.owner, th)] }];
   if (t.desc) body.push({ type: 'text', text: t.desc.slice(0, 300), size: 'sm', color: '#66675F', wrap: true, margin: 'lg' });
   return { type: 'flex', altText: `邀請你加入「${t.title}」`, contents: bubble(th, body, flexBtn('加入開展隊', liffUrl(`join=${t.code}`), th)) };
 }
 function sesFlex(s) {
   const t = TEAM.team, th = themeOf(t);
-  const body = [{ type: 'text', text: `${t.title}・開展時段`, size: 'xs', color: th.btn, weight: 'bold', wrap: true },
-    { type: 'text', text: sesName(s), weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+  const body = [...flexHead(t, `${t.title}・開展時段`, sesName(s), th),
     { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: [flexInfo('日期', dayLabel(s.date), th), flexInfo('時間', timeRange(s), th), flexInfo('地點', s.place, th), flexInfo('參加', `${s.parts.length} 人`, th)] }];
   if (s.note) body.push({ type: 'text', text: s.note.slice(0, 300), size: 'sm', color: '#66675F', wrap: true, margin: 'lg' });
   const q = `t=${encodeURIComponent(t.id)}&s=${encodeURIComponent(s.id)}${t.open && t.code ? `&j=${t.code}` : ''}`;
@@ -155,8 +163,7 @@ function sesFlex(s) {
 }
 function sumFlex(s) {
   const t = TEAM.team, th = themeOf(t), cards = sortCards(cardsIn(s.id));
-  const body = [{ type: 'text', text: `${t.title}・時段彙整`, size: 'xs', color: th.btn, weight: 'bold', wrap: true },
-    { type: 'text', text: sesName(s), weight: 'bold', size: 'xl', color: '#22302A', wrap: true, margin: 'sm' },
+  const body = [...flexHead(t, `${t.title}・時段彙整`, sesName(s), th),
     { type: 'text', text: `${sesLabel(s)}・${s.parts.length} 人參加`, size: 'xs', color: '#66675F', wrap: true, margin: 'sm' },
     { type: 'box', layout: 'vertical', margin: 'lg', spacing: 'sm', contents: s.items.map(k => flexInfo(ITEM[k].label, sesTotal(s, k), th)) }];
   if (cards.length) {

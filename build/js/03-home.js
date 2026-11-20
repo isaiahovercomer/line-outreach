@@ -54,7 +54,7 @@ function renderHome() {
   view(`${brandHeader()}
     <p class="hello">${ME.name ? `平安，${esc(ME.name)}！` : '平安！'}選一個開展隊，或建立新的開展隊。</p>
     <div class="team-list">${teams.map(t => { const th = themeOf(t); return `<button class="team-card" type="button" data-act="openTeam" data-id="${esc(t.id)}" style="--tc:${th.btn};--tn:${th.notch}">
-      <span class="tc-band"></span>
+      <span class="tc-band"></span>${teamIcon(t, 'tc-img')}
       <span class="tc-main"><b>${esc(t.title)}</b><small>${esc(periodLabel(t.start, t.end) || '未設定期間')}・${esc(t.title2 || role(t))}</small>
       <span class="tc-stats"><span><b>${t.sessionCount}</b>時段</span><span><b>${t.cardCount}</b>名單</span><span><b>${t.memberCount}</b>隊員</span></span></span></button>`; }).join('')
       || `<div class="empty"><p>還沒有加入任何開展隊。</p><p class="muted">點負責人傳來的邀請連結就能加入；或自己建立一個開展隊，邀請大家一起來。</p></div>`}</div>
@@ -72,6 +72,12 @@ function teamForm(t, isNew) {
     <label class="field"><span>開展隊名稱</span><input name="title" maxlength="40" required value="${esc(t.title)}" placeholder="例如：2026 秋季一中福音開展隊"></label>
     <label class="field"><span>說明（選填）</span><textarea name="desc" maxlength="300" placeholder="目標、範圍、集合地點…">${esc(t.desc)}</textarea></label>
     <div class="row2"><label class="field"><span>開始日</span><input type="date" name="start" value="${esc(t.start)}"></label><label class="field"><span>結束日（選填）</span><input type="date" name="end" value="${esc(t.end)}"></label></div>
+    <div class="field"><span>開展隊圖標（選填：顯示在列表、頁首和發到 LINE 的圖卡上）</span>
+      <div class="img-field"><span class="img-pv" id="tf-pv" style="--tc:${themeOf(t).btn}">${t.image ? `<img src="${esc(t.image)}" alt="">` : esc((t.title || '開').slice(0, 1))}</span>
+        <div class="img-btns"><label class="btn plain small">${ICON.image} 上傳圖片<input type="file" accept="image/*" id="tf-file" hidden></label>
+          ${t.image ? '<button type="button" class="link-btn danger" id="tf-clear">移除圖片</button>' : '<button type="button" class="link-btn danger" id="tf-clear" hidden>移除圖片</button>'}</div></div>
+      <input name="image" class="inp" type="url" inputmode="url" placeholder="或貼上圖片網址 https://…" value="${esc(t.image || '')}" style="margin-top:8px">
+      <p class="help" id="tf-st"></p></div>
     ${isNew ? `<label class="field"><span>你在這個隊的職稱</span><input name="myTitle" maxlength="12" value="隊長"></label>` : ''}
     <div class="field"><span>色調</span><div class="tones" role="radiogroup">${Object.entries(THEMES).map(([k, th]) => `<button type="button" role="radio" aria-checked="${t.theme === k}" data-tone="${k}" style="--sw:${th.btn};--sw2:${th.notch}"><i></i>${th.name}</button>`).join('')}</div></div>
     ${isNew ? '' : `<label class="switch"><input type="checkbox" name="open" ${t.open ? 'checked' : ''}><span>開放用邀請連結加入</span></label>`}
@@ -81,13 +87,24 @@ function teamForm(t, isNew) {
 function bindTeamForm(onSubmit) {
   const f = $('team-form');
   f.querySelectorAll('[data-tone]').forEach(b => b.onclick = () => f.querySelectorAll('[data-tone]').forEach(x => x.setAttribute('aria-checked', x === b)));
+  const pv = () => { const u = f.elements.image.value.trim(); $('tf-pv').innerHTML = isHttps(u) || /^data:|^icons\/|^img\//.test(u) ? `<img src="${esc(u)}" alt="">` : esc((f.elements.title.value || '開').slice(0, 1)); $('tf-clear').hidden = !u; };
+  f.elements.image.oninput = pv;
+  f.elements.title.addEventListener('input', () => { if (!f.elements.image.value.trim()) pv(); });
+  $('tf-clear').onclick = () => { f.elements.image.value = ''; pv(); };
+  $('tf-file').onchange = async e => {
+    const file = e.target.files[0]; e.target.value = '';
+    if (!file) return;
+    $('tf-st').textContent = '上傳中…';
+    try { f.elements.image.value = (await api('uploadImage', { data: await shrinkImage(file, 800, 0.85), mime: 'image/jpeg' })).url; pv(); $('tf-st').textContent = '已上傳'; }
+    catch (err) { $('tf-st').textContent = ''; toast('上傳失敗：' + err.message); }
+  };
   f.onsubmit = async e => {
     e.preventDefault();
     const v = n => (f.elements[n] ? f.elements[n].value : '').trim();
     const theme = (f.querySelector('[data-tone][aria-checked="true"]') || {}).dataset?.tone || 'gospel';
     const btn = f.querySelector('[type=submit]'), label = btn.textContent;
     btn.disabled = true; btn.textContent = '儲存中…';
-    try { await onSubmit({ title: v('title'), desc: v('desc'), start: v('start'), end: v('end'), theme, myTitle: v('myTitle'), open: f.elements.open ? f.elements.open.checked : true }, v('myname')); }
+    try { await onSubmit({ title: v('title'), desc: v('desc'), start: v('start'), end: v('end'), theme, image: v('image'), myTitle: v('myTitle'), open: f.elements.open ? f.elements.open.checked : true }, v('myname')); }
     catch (err) { toast(err.message); btn.disabled = false; btn.textContent = label; }
   };
 }
@@ -96,7 +113,7 @@ function newTeamFlow() {
   bindTeamForm(async (team, myname) => {
     const r = await api('createTeam', { team, name: myname });
     if (myname && ME) ME.name = myname;
-    HOME = null;
+    HOME = null; TEAM = null;
     teamFlow(r.team.id, 'mem', '');
     toast('開展隊建立好了，發邀請連結給大家吧');
   });
@@ -110,7 +127,7 @@ async function joinFlow(code) {
   const t = r.team, th = themeOf(t);
   document.title = `加入「${t.title}」`;
   view(`<section class="solo" style="${themeVars(th)}">
-    <div class="ticket"><div class="main"><p class="kicker">邀請你加入開展隊</p><h2 class="title">${esc(t.title)}</h2>
+    <div class="ticket"><div class="main">${t.image ? `<img class="join-img" src="${esc(t.image)}" alt="">` : ''}<p class="kicker">邀請你加入開展隊</p><h2 class="title">${esc(t.title)}</h2>
       <dl>${t.start || t.end ? `<dt>期間</dt><dd>${esc(periodLabel(t.start, t.end))}</dd>` : ''}<dt>負責人</dt><dd>${esc(t.owner)}</dd><dt>隊員</dt><dd>${r.memberCount} 人</dd></dl>
       ${t.desc ? `<p class="desc">${esc(t.desc)}</p>` : ''}</div>
       <div class="perf"></div>
