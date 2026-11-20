@@ -41,6 +41,7 @@ const THEMES = ['gospel', 'classic', 'sky', 'harvest', 'dawn', 'youth', 'kids', 
 
 /** 建立工作表、補齊標題列。更新程式後再執行一次也安全 */
 function setup() {
+  bumpVersions(CACHED_TABLES); // 讓所有快取作廢
   const ss = SpreadsheetApp.getActive();
   ss.setSpreadsheetTimeZone(CONFIG.TZ);
   Object.keys(HEADERS).forEach(name => {
@@ -56,6 +57,7 @@ function setup() {
   if (def && def.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(def);
   sessionSheet();
   photoFolder();
+  bumpVersions(CACHED_TABLES);
   try { addFirstAdmin(); } catch (e) { Logger.log(e.message); }
 }
 
@@ -161,16 +163,87 @@ function verifyIdToken(idToken) {
 }
 
 /* ---------- 工具 ---------- */
-function sheet(name) { return SpreadsheetApp.getActive().getSheetByName(name); }
-/** 加速：同一次請求裡，每張工作表只讀一次（寫入後清掉重讀） */
-let MEMO = {};
+/* ---------- 加速：資料表快取 ----------
+   讀試算表很慢（每張表約 0.5 秒），所以把讀到的資料表存進 CacheService（約 0.05 秒）。
+   每張表有一個版本號（存在指令碼屬性）；在 withLock 裡寫過哪張表，就換掉那張表的版本號，舊快取自動作廢。
+   在 withLock 裡（要寫入時）一律直接讀試算表，保證列號正確。 */
+let MEMO = {}, IN_LOCK = false, DIRTY = {}, VERS = null, CMETA = null;
+const CACHED_TABLES = ['使用者', '開展隊', '隊員', '時段', '計數', '名單卡', '管理員'];
+const CK = 'outreach:t:', CHUNK = 90000;
+let SS_ = null;
+function ssObj() { return SS_ || (SS_ = SpreadsheetApp.getActive()); }
+/** 要寫入的工作表一律用 sheet()；在 withLock 裡會記下來，結束時讓那張表的快取作廢 */
+function sheet(name) { if (IN_LOCK) DIRTY[name] = 1; return ssObj().getSheetByName(name); }
+function rawSheet(name) { return ssObj().getSheetByName(name); }
+function vers() {
+  if (!VERS) { try { VERS = JSON.parse(PropertiesService.getScriptProperties().getProperty('tableVers') || '{}'); } catch (e) { VERS = {}; } }
+  return VERS;
+}
+function packCells(v) { return v.map(r => r.map(c => c instanceof Date ? { $d: c.getTime() } : c)); }
+function unpackCells(v) { return v.map(r => r.map(c => c && typeof c === 'object' && '$d' in c ? new Date(c.$d) : c)); }
+function cacheGet(name) {
+  const ver = vers()[name];
+  if (!ver) return null;
+  const cache = CacheService.getScriptCache();
+  if (!CMETA) CMETA = cache.getAll(CACHED_TABLES.map(t => CK + t));
+  const meta = CMETA[CK + name];
+  if (!meta) return null;
+  try {
+    const m = JSON.parse(meta);
+    if (m.v !== ver) return null;
+    let text = m.d;
+    if (m.n) { const keys = []; for (let i = 0; i < m.n; i++) keys.push(CK + name + ':' + ver + ':' + i); const got = cache.getAll(keys); text = keys.map(k => got[k]).join(''); if (keys.some(k => got[k] == null)) return null; }
+    return unpackCells(JSON.parse(text));
+  } catch (e) { return null; }
+}
+function cachePut(name, values) {
+  const ver = vers()[name];
+  if (!ver) return;
+  try {
+    const text = JSON.stringify(packCells(values)), cache = CacheService.getScriptCache();
+    if (text.length <= CHUNK) { cache.put(CK + name, JSON.stringify({ v: ver, n: 0, d: text }), 1800); return; }
+    const parts = {}; let n = 0;
+    for (let i = 0; i < text.length; i += CHUNK) parts[CK + name + ':' + ver + ':' + (n++)] = text.slice(i, i + CHUNK);
+    if (n > 40) return; // 太大就不快取
+    cache.putAll(parts, 1800);
+    cache.put(CK + name, JSON.stringify({ v: ver, n: n }), 1800);
+  } catch (e) { /* 快取失敗不影響功能 */ }
+}
+/** 有人直接在試算表上修改（例如加管理員、改資料）時，讓那張表的快取作廢；刪列這類改動最多 30 分鐘後也會自動更新 */
+function onEdit(e) { try { bumpVersions([e.range.getSheet().getName()]); } catch (err) {} }
+/** 寫入後（在鎖裡）：換掉寫過的表的版本號 */
+function bumpVersions(names) {
+  if (!names.length) return;
+  const p = PropertiesService.getScriptProperties();
+  let v; try { v = JSON.parse(p.getProperty('tableVers') || '{}'); } catch (e) { v = {}; }
+  names.forEach(n => { v[n] = Utilities.getUuid().slice(0, 8); });
+  p.setProperty('tableVers', JSON.stringify(v));
+  VERS = v; CMETA = null;
+}
+/** 同一次請求裡每張表只讀一次；不在鎖裡時先看快取 */
+function data(name) {
+  if (MEMO[name]) return MEMO[name];
+  const useCache = !IN_LOCK && CACHED_TABLES.indexOf(name) >= 0;
+  if (useCache) { const c = cacheGet(name); if (c) return (MEMO[name] = c); }
+  const v = rawSheet(name).getDataRange().getValues();
+  if (useCache) cachePut(name, v);
+  return (MEMO[name] = v);
+}
 const MEMO_DATA = name => data(name);
-function data(name) { return MEMO[name] || (MEMO[name] = sheet(name).getDataRange().getValues()); }
 function rows(name) { return data(name).slice(1); }
 function fmt(d, p) { return Utilities.formatDate(d, CONFIG.TZ, p || 'yyyy/MM/dd HH:mm'); }
 function parseJson(s, fb) { try { return JSON.parse(s); } catch (e) { return fb; } }
 function isTrue(v) { return v === true || String(v).toUpperCase() === 'TRUE'; }
-function withLock(fn) { const l = LockService.getScriptLock(); l.waitLock(15000); MEMO = {}; try { return fn(); } finally { MEMO = {}; l.releaseLock(); } }
+function withLock(fn) {
+  if (IN_LOCK) return fn();
+  const l = LockService.getScriptLock(); l.waitLock(15000);
+  IN_LOCK = true; DIRTY = {}; MEMO = {};
+  try { return fn(); }
+  finally {
+    try { bumpVersions(Object.keys(DIRTY).filter(n => CACHED_TABLES.indexOf(n) >= 0)); } catch (e) {}
+    IN_LOCK = false; DIRTY = {}; MEMO = {}; ADMIN_IDS = null; l.releaseLock();
+  }
+}
 function str(v, n) { return String(v == null ? '' : v).trim().slice(0, n || 200); }
 function ymdOf(v) { if (v instanceof Date) return fmt(v, 'yyyy-MM-dd'); const s = str(v, 10); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ''; }
 function hhmm(v) { const s = v instanceof Date ? fmt(v, 'HH:mm') : str(v, 5); return /^\d{2}:\d{2}$/.test(s) ? s : ''; }
@@ -468,7 +541,7 @@ function saveCard(ctx, c) {
       return rowToCard(sh.getRange(f.row, 1, 1, HEADERS['名單卡'].length).getValues()[0]);
     }
     findSession(ctx, c.sessionId);
-    if (!rows(SH.COUNTS).some(r => String(r[CT.SID]) === c.sessionId && String(r[CT.UID]) === ctx.uid)) sh.getParent().getSheetByName(SH.COUNTS).appendRow([c.sessionId, ctx.tid, ctx.uid, '{}', now, now]);
+    if (!rows(SH.COUNTS).some(r => String(r[CT.SID]) === c.sessionId && String(r[CT.UID]) === ctx.uid)) sheet(SH.COUNTS).appendRow([c.sessionId, ctx.tid, ctx.uid, '{}', now, now]);
     const row = [newId('C'), ctx.tid, c.sessionId, ctx.uid, ctx.name].concat(v, [now, now]);
     sh.appendRow(row);
     return rowToCard(row);
@@ -598,5 +671,6 @@ function addFirstAdmin() {
   if (!s) throw new Error('還沒有人登入過平台，請先從 LINE 打開平台一次');
   const uid = String(s[1]);
   adm.appendRow([uid, nameOf(uid) || String(s[2])]);
+  bumpVersions(['管理員']);
   Logger.log('已設為管理員：' + uid);
 }
