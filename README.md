@@ -7,6 +7,13 @@
 - 網站：https://isaiahovercomer.github.io/line-outreach/
 - 預覽（範例資料）：`?demo`（首頁）、`?demo=team`（開展紀錄）、`?demo=session`（一個時段）、`?demo=sum`（時段彙整）、`?demo=all`（累積彙整）、`?demo=pray`（代禱牆）、`?demo=mem`（隊員）、`?demo=join`（邀請加入）；加 `&notour` 跳過教學
 
+## 部署資料
+
+- 入口：https://liff.line.me/2012412693-u3yd2OOT（LIFF「開展隊紀錄」，掛在 LINE Login channel「活動報名」2012412693）
+- 試算表「開展隊紀錄」：https://docs.google.com/spreadsheets/d/15iNk3nE6N3Yn5vkV43R5bpdbAT5fI-8ik7kw3T7ZYIQ/edit
+- Apps Script「開展隊紀錄後端」：https://script.google.com/home/projects/1Rj6WN8xmaK5gy1B4vvJVYg4fFCNPzA_RnNllpoi1_qUa1_QayBQWcjF2/edit
+- 網頁應用程式（部署作業網址不變，更新時建立新版本）：`build/js/01-core.js` 的 `GAS_URL`
+
 ## 功能
 
 1. **開展隊**：任何人都能建立，建立者是負責人。用邀請連結（可發到 LINE 群組）讓大家加入
