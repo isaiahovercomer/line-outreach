@@ -616,6 +616,11 @@
   .adm-dock .inner > span { margin-right: auto; font-size: 14px; }
   .adm-dock .btn.small { margin: 0; padding: 8px 10px; }
   .btn.danger-fill.small { background: var(--stamp); color: #fff; }
+
+  /* ---------- 時段範本 ---------- */
+  .templates h2 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .templates h2 small { font-weight: 400; font-size: 12px; color: var(--ink-2); }
+  .tpl[aria-pressed="true"] { border-color: var(--tc); box-shadow: 0 0 0 2px var(--tc); background: var(--gold-soft); }
 </style>
 </head>
 <body>
@@ -1316,12 +1321,24 @@ function sesCard(s, me) {
 }
 
 /* ================= 建立／修改開展時段 ================= */
+/** 範本：這個開展隊建立過的時段（名稱、時間、地點、計數項目、備註都一樣的只算一個），新的在前 */
+let TPLS = [];
+function sesTemplates() {
+  const seen = new Set();
+  TPLS = sortSes(TEAM.sessions).filter(s => { const k = [s.title, s.place, s.start, s.end, s.items.join(), s.note].join('|'); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
+  if (!TPLS.length) return '';
+  const th = themeOf(TEAM.team);
+  return `<div class="templates"><h2>從建立過的時段帶入<small>點一下就填好，日期改成今天</small></h2>
+    <div class="tpl-row">${TPLS.map((t, i) => `<button class="tpl" type="button" data-tpl="${i}" aria-pressed="false" style="--tc:${th.btn}">
+      <b>${esc(sesName(t))}</b><small>${esc([timeRange(t), t.title ? t.place : ''].filter(Boolean).join('・') || '—')}</small><small>計數 ${t.items.length} 項${t.note ? '・有備註' : ''}</small><small class="saved">上次 ${esc(dayLabel(t.date))}・${esc(t.creator)}</small></button>`).join('')}</div></div>`;
+}
 function sesFormFlow(s) {
   const isNew = !s;
   s = s || { title: '', date: ymd(now()), start: '', end: '', place: '', items: ITEMS.map(x => x.k), note: '' };
   NAV++;
   setNav(TAB);
   view(`<div class="team-wrap" style="${themeVars(themeOf(TEAM.team))}">${subbar('返回', isNew ? '建立開展時段' : '修改開展時段', 'backRec')}
+    ${isNew ? sesTemplates() : ''}
     <form class="panel" id="ses-form" autocomplete="off">
       <label class="field"><span>名稱（選填）</span><input name="title" maxlength="40" value="${esc(s.title)}" placeholder="例如：一中街掃街、社區叩門"></label>
       <label class="field"><span>日期</span><input type="date" name="date" required value="${esc(s.date)}"></label>
@@ -1332,6 +1349,13 @@ function sesFormFlow(s) {
       <button class="btn send" type="submit">${isNew ? '建立時段' : '儲存'}</button>
     </form></div>`);
   const f = $('ses-form');
+  $$('[data-tpl]').forEach(b => b.onclick = () => {
+    const t = TPLS[+b.dataset.tpl];
+    ['title', 'start', 'end', 'place', 'note'].forEach(k => { f.elements[k].value = t[k] || ''; });
+    $$('#ses-form [name=items]').forEach(i => { i.checked = t.items.includes(i.value); });
+    $$('[data-tpl]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    toast('已帶入範本，日期請確認');
+  });
   f.onsubmit = async e => {
     e.preventDefault();
     const v = n => f.elements[n].value.trim();
@@ -1859,13 +1883,14 @@ document.addEventListener('focusin', e => { if (e.target.matches('[data-cnt]')) 
 /* ================= 使用教學（金框導覽） =================
    之後加功能時：新步驟標上 since: 新版本號，並把 TOUR_VERSION 加 1 */
 const TOUR_KEY = 'outreach.tour';
-const TOUR_VERSION = 2;
+const TOUR_VERSION = 3;
 const q1 = sel => document.querySelector(sel);
 const TOUR_STEPS = [
   { since: 1, where: 'home', target: () => q1('#new-team'), title: '建立開展隊', text: '任何人都能建立開展隊（例如一次福音開展活動），建立的人就是負責人，可以發邀請連結給大家加入。' },
   { since: 1, where: 'home', target: () => q1('.team-card'), title: '我的開展隊', text: '加入的開展隊都在這裡，點進去就能記錄和看彙整。' },
   { since: 2, where: 'home', target: () => q1('#to-admin'), title: '後台管理', text: '建立開展隊的人可以在後台一次管理自己建立的開展隊：選取、修改、開放或關閉加入、刪除。平台管理員看得到所有開展隊。' },
   { since: 1, where: 'team', tab: 'rec', target: () => q1('#new-ses') || q1('.ses-card'), title: '開展時段', text: '每次出去開展，先建立一個時段（時間、地點、要計數的項目），其他人點進去就能加入一起記錄。' },
+  { since: 3, where: 'team', tab: 'rec', target: () => q1('#new-ses'), title: '時段範本', text: '建立過的開展時段會自動變成範本。建立新時段時，點一下範本就帶入名稱、時間、地點和計數項目，只要確認日期。' },
   { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#counters'), title: '計數器', text: '按＋－記錄接觸人數、叩訪戶數、發單張數…，也可以直接點數字輸入，會自動儲存。' },
   { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#new-card'), title: '記名卡片', text: '遇到願意留資料的人就新增一張記名卡片，欄位都可以不填；勾「福、家、排、區」和「迫切代禱」，名字會出現在代禱牆。' },
   { since: 1, where: 'team', tab: 'rec', sub: true, target: () => q1('#my-rec .tools'), title: '一鍵複製、存成圖片', text: '每個頁面和卡片右上角都有「複製」和「存圖」，可以貼到 LINE 或存到手機相簿。' },

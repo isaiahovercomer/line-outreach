@@ -102,12 +102,24 @@ function sesCard(s, me) {
 }
 
 /* ================= 建立／修改開展時段 ================= */
+/** 範本：這個開展隊建立過的時段（名稱、時間、地點、計數項目、備註都一樣的只算一個），新的在前 */
+let TPLS = [];
+function sesTemplates() {
+  const seen = new Set();
+  TPLS = sortSes(TEAM.sessions).filter(s => { const k = [s.title, s.place, s.start, s.end, s.items.join(), s.note].join('|'); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
+  if (!TPLS.length) return '';
+  const th = themeOf(TEAM.team);
+  return `<div class="templates"><h2>從建立過的時段帶入<small>點一下就填好，日期改成今天</small></h2>
+    <div class="tpl-row">${TPLS.map((t, i) => `<button class="tpl" type="button" data-tpl="${i}" aria-pressed="false" style="--tc:${th.btn}">
+      <b>${esc(sesName(t))}</b><small>${esc([timeRange(t), t.title ? t.place : ''].filter(Boolean).join('・') || '—')}</small><small>計數 ${t.items.length} 項${t.note ? '・有備註' : ''}</small><small class="saved">上次 ${esc(dayLabel(t.date))}・${esc(t.creator)}</small></button>`).join('')}</div></div>`;
+}
 function sesFormFlow(s) {
   const isNew = !s;
   s = s || { title: '', date: ymd(now()), start: '', end: '', place: '', items: ITEMS.map(x => x.k), note: '' };
   NAV++;
   setNav(TAB);
   view(`<div class="team-wrap" style="${themeVars(themeOf(TEAM.team))}">${subbar('返回', isNew ? '建立開展時段' : '修改開展時段', 'backRec')}
+    ${isNew ? sesTemplates() : ''}
     <form class="panel" id="ses-form" autocomplete="off">
       <label class="field"><span>名稱（選填）</span><input name="title" maxlength="40" value="${esc(s.title)}" placeholder="例如：一中街掃街、社區叩門"></label>
       <label class="field"><span>日期</span><input type="date" name="date" required value="${esc(s.date)}"></label>
@@ -118,6 +130,13 @@ function sesFormFlow(s) {
       <button class="btn send" type="submit">${isNew ? '建立時段' : '儲存'}</button>
     </form></div>`);
   const f = $('ses-form');
+  $$('[data-tpl]').forEach(b => b.onclick = () => {
+    const t = TPLS[+b.dataset.tpl];
+    ['title', 'start', 'end', 'place', 'note'].forEach(k => { f.elements[k].value = t[k] || ''; });
+    $$('#ses-form [name=items]').forEach(i => { i.checked = t.items.includes(i.value); });
+    $$('[data-tpl]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    toast('已帶入範本，日期請確認');
+  });
   f.onsubmit = async e => {
     e.preventDefault();
     const v = n => f.elements[n].value.trim();

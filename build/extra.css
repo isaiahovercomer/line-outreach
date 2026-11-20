@@ -265,3 +265,8 @@
   .adm-dock .inner > span { margin-right: auto; font-size: 14px; }
   .adm-dock .btn.small { margin: 0; padding: 8px 10px; }
   .btn.danger-fill.small { background: var(--stamp); color: #fff; }
+
+  /* ---------- 時段範本 ---------- */
+  .templates h2 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .templates h2 small { font-weight: 400; font-size: 12px; color: var(--ink-2); }
+  .tpl[aria-pressed="true"] { border-color: var(--tc); box-shadow: 0 0 0 2px var(--tc); background: var(--gold-soft); }
