@@ -61,6 +61,7 @@ async function teamFlow(tid, tab, sub, joinCode) {
 }
 async function reloadTeam(keep = true) {
   const r = await api('team', { teamId: TEAM.team.id });
+  cachePut('team', { teamId: TEAM.team.id }, r);
   TEAM = r; renderTeam(keep);
 }
 

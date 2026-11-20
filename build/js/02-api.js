@@ -148,7 +148,7 @@ const setSession = s => { try { s ? localStorage.setItem(SESSION_KEY, JSON.strin
 
 const READS = new Set(['home', 'team', 'invite', 'myData']);
 async function api(action, data = {}) {
-  if (DEMO) { const r = await demoApi(action, data); if (!READS.has(action) && action !== 'uploadImage' && action !== 'saveCounts') clearCache(); return JSON.parse(JSON.stringify(r)); }
+  if (DEMO) { const r = await demoApi(action, data); afterWrite(action); return JSON.parse(JSON.stringify(r)); }
   const body = { action, ...data };
   const s = action === 'session' ? null : getSession();
   if (s) body.session = s.token; else { await LIFF_READY; body.idToken = liff.getIDToken(); }
@@ -163,7 +163,7 @@ async function api(action, data = {}) {
     if (j.error === 'TOKEN_EXPIRED') { await LIFF_READY; liff.logout(); liff.login({ redirectUri: location.href }); throw new Error('登入已過期，正在重新登入'); }
     throw new Error(j.error);
   }
-  if (!READS.has(action) && action !== 'session' && action !== 'uploadImage' && action !== 'saveCounts') clearCache();
+  afterWrite(action);
   return j;
 }
 
@@ -183,6 +183,15 @@ function saveCache() {
   }, 300);
 }
 function clearCache() { CACHE = {}; INFLIGHT.clear(); saveCache(); }
+/** 寫入後：一般的修改只讓快取「過期」（畫面先用舊資料、背景馬上換新）；刪除開展隊、退出這類才整個清掉，避免看到已不存在的東西 */
+const WIPE = new Set(['deleteTeam', 'leaveTeam', 'adminDelete', 'deleteMyData', 'removeMember', 'joinTeam', 'createTeam']);
+function afterWrite(action) {
+  if (READS.has(action) || action === 'session' || action === 'uploadImage' || action === 'saveCounts') return;
+  if (WIPE.has(action)) clearCache(); else INFLIGHT.clear();
+}
+const cachePut = (action, data, r) => { CACHE[ckey(action, data)] = r; saveCache(); };
+/** 預先在背景抓資料，點進去時就能馬上顯示 */
+function prefetch(action, data) { if (CACHE[ckey(action, data)] === undefined && !INFLIGHT.has(ckey(action, data))) apiCached(action, data).catch(() => {}); }
 const INFLIGHT = new Map();
 const ckey = (action, data) => action + ':' + JSON.stringify(data || {});
 function apiCached(action, data = {}, onFresh) {

@@ -46,6 +46,8 @@ async function homeFlow() {
   const r = await apiCached('home', {}, fresh => { HOME = fresh; ME = fresh.me; if (nav === NAV) renderHome(); });
   HOME = r; ME = r.me;
   renderHome();
+  // 背景先抓前幾個開展隊的資料，點進去就不用等
+  setTimeout(() => (HOME.teams || []).slice(0, 3).forEach(t => prefetch('team', { teamId: t.id })), 300);
   maybeStartTour();
 }
 function renderHome() {

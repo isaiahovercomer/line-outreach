@@ -1,6 +1,10 @@
 #!/bin/sh
 # 把 build/ 裡的樣式和程式組成單一的 index.html
 cd "$(dirname "$0")/.."
+# 有 esbuild 就壓縮樣式和程式（讀取更快）；沒有就原樣放進去
+ESB=$(command -v esbuild || ls /opt/npm-tools/node_modules/.bin/esbuild 2>/dev/null || ls node_modules/.bin/esbuild 2>/dev/null)
+css() { if [ -n "$ESB" ]; then cat build/base.css build/extra.css | "$ESB" --loader=css --minify --charset=utf8 --log-level=error; else cat build/base.css build/extra.css; fi; }
+js() { if [ -n "$ESB" ]; then cat build/js/*.js | "$ESB" --loader=js --minify --charset=utf8 --target=es2019 --legal-comments=none --log-level=error; else cat build/js/*.js; fi; }
 {
 cat <<'H'
 <!doctype html>
@@ -25,9 +29,10 @@ cat <<'H'
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="preconnect" href="https://api.line.me">
+<link rel="dns-prefetch" href="https://lh3.googleusercontent.com">
 <style>
 H
-cat build/base.css build/extra.css
+css
 cat <<'H'
 </style>
 </head>
@@ -38,7 +43,7 @@ cat <<'H'
 <div class="notice" id="notice" role="status" hidden><span id="notice-text"></span><button type="button" id="notice-go"></button><button type="button" id="notice-x" aria-label="關閉">×</button></div>
 <script>
 H
-cat build/js/*.js
+js
 cat <<'H'
 </script>
 </body>

@@ -162,11 +162,15 @@ function verifyIdToken(idToken) {
 
 /* ---------- 工具 ---------- */
 function sheet(name) { return SpreadsheetApp.getActive().getSheetByName(name); }
-function rows(name) { const v = sheet(name).getDataRange().getValues(); v.shift(); return v; }
+/** 加速：同一次請求裡，每張工作表只讀一次（寫入後清掉重讀） */
+let MEMO = {};
+const MEMO_DATA = name => data(name);
+function data(name) { return MEMO[name] || (MEMO[name] = sheet(name).getDataRange().getValues()); }
+function rows(name) { return data(name).slice(1); }
 function fmt(d, p) { return Utilities.formatDate(d, CONFIG.TZ, p || 'yyyy/MM/dd HH:mm'); }
 function parseJson(s, fb) { try { return JSON.parse(s); } catch (e) { return fb; } }
 function isTrue(v) { return v === true || String(v).toUpperCase() === 'TRUE'; }
-function withLock(fn) { const l = LockService.getScriptLock(); l.waitLock(15000); try { return fn(); } finally { l.releaseLock(); } }
+function withLock(fn) { const l = LockService.getScriptLock(); l.waitLock(15000); MEMO = {}; try { return fn(); } finally { MEMO = {}; l.releaseLock(); } }
 function str(v, n) { return String(v == null ? '' : v).trim().slice(0, n || 200); }
 function ymdOf(v) { if (v instanceof Date) return fmt(v, 'yyyy-MM-dd'); const s = str(v, 10); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ''; }
 function hhmm(v) { const s = v instanceof Date ? fmt(v, 'HH:mm') : str(v, 5); return /^\d{2}:\d{2}$/.test(s) ? s : ''; }
@@ -179,7 +183,7 @@ function deleteRowsWhere(name, test) {
   return n;
 }
 function findRow(name, col, id) {
-  const data = sheet(name).getDataRange().getValues();
+  const data = MEMO_DATA(name);
   for (let i = 1; i < data.length; i++) if (String(data[i][col]) === String(id)) return { row: i + 1, r: data[i] };
   return null;
 }
@@ -255,13 +259,16 @@ function createTeam(user, input, myName) {
   return rowToTeam(findTeam(id).r);
 }
 function updateTeam(id, input) {
-  const v = teamValues(input), f = findTeam(id);
-  sheet(SH.TEAMS).getRange(f.row, 2, 1, v.length).setValues([v]);
-  if (input.open != null) sheet(SH.TEAMS).getRange(f.row, TM.OPEN + 1).setValue(!!input.open);
-  if (input.image != null) sheet(SH.TEAMS).getRange(f.row, TM.IMAGE + 1).setValue(cleanImage(input.image));
+  const v = teamValues(input);
+  withLock(() => {
+    const f = findTeam(id);
+    sheet(SH.TEAMS).getRange(f.row, 2, 1, v.length).setValues([v]);
+    if (input.open != null) sheet(SH.TEAMS).getRange(f.row, TM.OPEN + 1).setValue(!!input.open);
+    if (input.image != null) sheet(SH.TEAMS).getRange(f.row, TM.IMAGE + 1).setValue(cleanImage(input.image));
+  });
   return rowToTeam(findTeam(id).r);
 }
-function resetInvite(id) { const f = findTeam(id); sheet(SH.TEAMS).getRange(f.row, TM.CODE + 1).setValue(inviteCode()); return rowToTeam(findTeam(id).r); }
+function resetInvite(id) { withLock(() => { const f = findTeam(id); sheet(SH.TEAMS).getRange(f.row, TM.CODE + 1).setValue(inviteCode()); }); return rowToTeam(findTeam(id).r); }
 function deleteTeam(id) {
   withLock(() => {
     sheet(SH.TEAMS).deleteRow(findTeam(id).row);
@@ -283,7 +290,12 @@ function parsePerms(v) {
 function permsStr(p) { return PERMS.filter(k => p && p[k]).join(','); }
 function memberRows(tid) { return rows(SH.MEMBERS).filter(r => String(r[MB.TID]) === String(tid)); }
 /** 確認是隊員（平台管理員視同負責人），回傳 { tid, team, uid, name, perms } */
+const CTX_MEMO = {};
 function requireMember(user, tid) {
+  const key = user.userId + '|' + tid;
+  return CTX_MEMO[key] || (CTX_MEMO[key] = requireMember_(user, tid));
+}
+function requireMember_(user, tid) {
   if (!tid) throw new Error('缺少開展隊代碼');
   const team = rowToTeam(findTeam(tid).r);
   const m = memberRows(tid).filter(r => String(r[MB.UID]) === user.userId)[0];
@@ -381,8 +393,11 @@ function updateSession(ctx, sid, input) {
   const f = findSession(ctx, sid);
   if (!canEditSession(ctx, f)) throw new Error('只有建立這個時段的人可以修改');
   const v = sessionValues(input);
-  sheet(SH.SESSIONS).getRange(f.row, SS.TITLE + 1, 1, v.length).setValues([v]);
-  sheet(SH.SESSIONS).getRange(f.row, SS.NOTE + 1, 1, 2).setValues([[str(input.note, 300), sesColor(input.color)]]);
+  withLock(() => {
+    const g = findSession(ctx, sid);
+    sheet(SH.SESSIONS).getRange(g.row, SS.TITLE + 1, 1, v.length).setValues([v]);
+    sheet(SH.SESSIONS).getRange(g.row, SS.NOTE + 1, 1, 2).setValues([[str(input.note, 300), sesColor(input.color)]]);
+  });
 }
 function deleteSessionRow(ctx, sid) {
   const f = findSession(ctx, sid);
@@ -514,7 +529,7 @@ function needTeamAdmin(user, id) {
   if (t.ownerId !== user.userId && !isAdmin(user.userId)) throw new Error('只有建立「' + t.title + '」的人或平台管理員可以管理');
   return t;
 }
-function setTeamOpen(id, open) { const f = findTeam(id); sheet(SH.TEAMS).getRange(f.row, TM.OPEN + 1).setValue(open); }
+function setTeamOpen(id, open) { withLock(() => { const f = findTeam(id); sheet(SH.TEAMS).getRange(f.row, TM.OPEN + 1).setValue(open); }); }
 function adminTeams(user) {
   const admin = isAdmin(user.userId), names = {};
   rows(SH.PEOPLE).forEach(r => { names[String(r[0])] = String(r[1]); });
